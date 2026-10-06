@@ -59,6 +59,9 @@ func TestCLI_AddListStatusRenameRemove(t *testing.T) {
 
 	// Verify shortcut file created
 	scPath := app.Paths.ShortcutPath("claudeswap-deepak")
+	if runtime.GOOS == "windows" {
+		scPath += ".cmd"
+	}
 	if _, err := os.Stat(scPath); err != nil {
 		t.Errorf("Expected shortcut file to exist at %s", scPath)
 	}
@@ -99,6 +102,9 @@ func TestCLI_AddListStatusRenameRemove(t *testing.T) {
 		t.Errorf("Old shortcut should have been removed: %s", scPath)
 	}
 	newScPath := app.Paths.ShortcutPath("claudeswap-work")
+	if runtime.GOOS == "windows" {
+		newScPath += ".cmd"
+	}
 	if _, err := os.Stat(newScPath); err != nil {
 		t.Errorf("New shortcut should exist: %s", newScPath)
 	}

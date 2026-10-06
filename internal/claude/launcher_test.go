@@ -11,11 +11,8 @@ import (
 	"github.com/claudeswap/claudeswap/internal/profile"
 )
 
-func TestLauncher_WithMockClaude(t *testing.T) {
-	tempDir := t.TempDir()
-	paths := config.NewPathsWithBase(tempDir)
-
-	// Build mock Claude binary
+func buildMockClaude(t *testing.T, tempDir string) string {
+	t.Helper()
 	mockBinName := "mock-claude"
 	if runtime.GOOS == "windows" {
 		mockBinName += ".exe"
@@ -26,6 +23,13 @@ func TestLauncher_WithMockClaude(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to build mock claude: %v (output: %s)", err, string(out))
 	}
+	return mockBinPath
+}
+
+func TestLauncher_WithMockClaude(t *testing.T) {
+	tempDir := t.TempDir()
+	paths := config.NewPathsWithBase(tempDir)
+	mockBinPath := buildMockClaude(t, tempDir)
 
 	detector := NewDetector(mockBinPath)
 	launcher := NewLauncher(detector, paths)
@@ -71,12 +75,7 @@ func TestLauncher_WithMockClaude(t *testing.T) {
 func TestLauncher_ConcurrentProfiles(t *testing.T) {
 	tempDir := t.TempDir()
 	paths := config.NewPathsWithBase(tempDir)
-
-	mockBinPath := filepath.Join(tempDir, "mock-claude")
-	buildCmd := exec.Command("go", "build", "-o", mockBinPath, "../../test/mock_claude/main.go")
-	if out, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to build mock claude: %v (%s)", err, string(out))
-	}
+	mockBinPath := buildMockClaude(t, tempDir)
 
 	detector := NewDetector(mockBinPath)
 	launcher := NewLauncher(detector, paths)
@@ -135,12 +134,7 @@ func TestLauncher_ConcurrentProfiles(t *testing.T) {
 func TestLauncher_SharedContext(t *testing.T) {
 	tempDir := t.TempDir()
 	paths := config.NewPathsWithBase(tempDir)
-
-	mockBinPath := filepath.Join(tempDir, "mock-claude")
-	buildCmd := exec.Command("go", "build", "-o", mockBinPath, "../../test/mock_claude/main.go")
-	if out, err := buildCmd.CombinedOutput(); err != nil {
-		t.Fatalf("Failed to build mock claude: %v (%s)", err, string(out))
-	}
+	mockBinPath := buildMockClaude(t, tempDir)
 
 	detector := NewDetector(mockBinPath)
 	launcher := NewLauncher(detector, paths)
