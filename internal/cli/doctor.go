@@ -23,7 +23,7 @@ and shell PATH integration are properly configured.`,
 				msg, err := shortcut.InstallShellIntegration(app.Paths)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "✗ Failed to update shell integration: %v\n", err)
-					os.Exit(ExitGeneralError)
+					return err
 				}
 				fmt.Println(msg)
 				return nil
@@ -125,7 +125,6 @@ func runDoctorCheck(app *AppContext) error {
 	fmt.Println()
 	if hasCriticalIssues {
 		fmt.Println("⚠ Issues were detected that may prevent ClaudeSwap from functioning.")
-		os.Exit(ExitGeneralError)
 	} else {
 		fmt.Println("✓ No critical problems detected.")
 	}
