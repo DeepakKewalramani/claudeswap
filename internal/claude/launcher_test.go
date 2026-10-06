@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/claudeswap/claudeswap/internal/config"
@@ -15,7 +16,11 @@ func TestLauncher_WithMockClaude(t *testing.T) {
 	paths := config.NewPathsWithBase(tempDir)
 
 	// Build mock Claude binary
-	mockBinPath := filepath.Join(tempDir, "mock-claude")
+	mockBinName := "mock-claude"
+	if runtime.GOOS == "windows" {
+		mockBinName += ".exe"
+	}
+	mockBinPath := filepath.Join(tempDir, mockBinName)
 	buildCmd := exec.Command("go", "build", "-o", mockBinPath, "../../test/mock_claude/main.go")
 	out, err := buildCmd.CombinedOutput()
 	if err != nil {

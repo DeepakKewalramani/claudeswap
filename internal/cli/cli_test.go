@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -152,7 +153,11 @@ func TestCLI_LaunchForwardingWithMockClaude(t *testing.T) {
 	tempDir := t.TempDir()
 
 	// Build mock Claude binary
-	mockBinPath := filepath.Join(tempDir, "mock-claude")
+	mockBinName := "mock-claude"
+	if runtime.GOOS == "windows" {
+		mockBinName += ".exe"
+	}
+	mockBinPath := filepath.Join(tempDir, mockBinName)
 	buildCmd := exec.Command("go", "build", "-o", mockBinPath, "../../test/mock_claude/main.go")
 	if out, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("Failed to build mock claude: %v (output: %s)", err, string(out))

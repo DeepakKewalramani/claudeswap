@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -114,6 +115,10 @@ func TestStore_BackupAndCorruptionRecovery(t *testing.T) {
 }
 
 func TestStore_FilePermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping POSIX file permission checks on Windows")
+	}
+
 	tempDir := t.TempDir()
 	paths := config.NewPathsWithBase(tempDir)
 	store := NewStore(paths)
