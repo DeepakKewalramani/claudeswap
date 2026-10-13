@@ -21,6 +21,14 @@ type UIStyles struct {
 	Divider        lipgloss.Style
 	ActionItem     lipgloss.Style
 	SelectedAction lipgloss.Style
+	ActiveBox      lipgloss.Style
+	InactiveBox    lipgloss.Style
+	InspectorBox   lipgloss.Style
+	TabActive      lipgloss.Style
+	TabInactive    lipgloss.Style
+	BranchBadge    lipgloss.Style
+	HashBadge      lipgloss.Style
+	TextMuted      lipgloss.Style
 }
 
 // DefaultStyles returns modern, polished styles respecting NO_COLOR.
@@ -42,6 +50,14 @@ func DefaultStyles() UIStyles {
 			Divider:        lipgloss.NewStyle(),
 			ActionItem:     lipgloss.NewStyle(),
 			SelectedAction: lipgloss.NewStyle().Bold(true),
+			ActiveBox:      lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1),
+			InactiveBox:    lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1),
+			InspectorBox:   lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1),
+			TabActive:      lipgloss.NewStyle().Bold(true),
+			TabInactive:    lipgloss.NewStyle(),
+			BranchBadge:    lipgloss.NewStyle(),
+			HashBadge:      lipgloss.NewStyle(),
+			TextMuted:      lipgloss.NewStyle(),
 		}
 	}
 
@@ -50,13 +66,42 @@ func DefaultStyles() UIStyles {
 	warnColor := lipgloss.Color("#FFAE00")
 	loggedOutColor := lipgloss.Color("#E06C75")
 	mutedColor := lipgloss.Color("#888888")
-	subtleBorder := lipgloss.Color("#3C3C3C")
+	subtleBorder := lipgloss.Color("#3B4252")
+	activeBorder := lipgloss.Color("#8172F8")
+	inspectorBorder := lipgloss.Color("#4C566A")
 
 	return UIStyles{
 		Box: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(subtleBorder).
-			Padding(1, 2),
+			Padding(0, 1),
+		ActiveBox: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(activeBorder).
+			Padding(0, 1),
+		InactiveBox: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(subtleBorder).
+			Padding(0, 1),
+		InspectorBox: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(inspectorBorder).
+			Padding(0, 1),
+		TabActive: lipgloss.NewStyle().
+			Background(primaryColor).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Bold(true).
+			Padding(0, 1),
+		TabInactive: lipgloss.NewStyle().
+			Background(lipgloss.Color("#2E3440")).
+			Foreground(lipgloss.Color("#D8DEE9")).
+			Padding(0, 1),
+		BranchBadge: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#88C0D0")),
+		HashBadge: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#EBCB8B")),
+		TextMuted: lipgloss.NewStyle().
+			Foreground(mutedColor),
 		Title: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(primaryColor),
