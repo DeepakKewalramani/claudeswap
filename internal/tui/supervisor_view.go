@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/claudeswap/claudeswap/internal/supervisor"
 )
@@ -159,9 +158,12 @@ func (m SupervisorModel) View() string {
 
 	b.WriteString(m.styles.Title.Render(headerTitle) + " " + slotBadge + " " + refreshBadge + "\n\n")
 
-	// 2. Table Headers
-	hdr := fmt.Sprintf("  %-3s %-16s %-14s %-12s %-16s %-24s %s",
-		"#", "TASK NAME", "PROJECT", "PROFILE", "STATUS", "CURRENT ACTIVITY", "UPTIME")
+	actWidth := totalWidth - 72
+	if actWidth < 20 {
+		actWidth = 20
+	}
+	hdr := fmt.Sprintf("  %-3s %-16s %-14s %-12s %-16s %-*s %s",
+		"#", "TASK NAME", "PROJECT", "PROFILE", "STATUS", actWidth, "CURRENT ACTIVITY", "UPTIME")
 	if len(hdr) > totalWidth-2 {
 		hdr = hdr[:totalWidth-2]
 	}
@@ -203,14 +205,14 @@ func (m SupervisorModel) View() string {
 			if act == "" {
 				act = "Idle"
 			}
-			if len(act) > 23 {
-				act = act[:20] + "..."
+			if len(act) > actWidth-2 {
+				act = act[:actWidth-5] + "..."
 			}
 
 			uptime := formatUptime(s.StartedAt)
 
-			row := fmt.Sprintf("%s%-3s %-16s %-14s %-12s %-16s %-24s %s",
-				prefix, numStr, task, proj, prof, statusStr, act, uptime)
+			row := fmt.Sprintf("%s%-3s %-16s %-14s %-12s %-16s %-*s %s",
+				prefix, numStr, task, proj, prof, statusStr, actWidth, act, uptime)
 			if len(row) > totalWidth-2 {
 				row = row[:totalWidth-2]
 			}
@@ -256,10 +258,11 @@ func (m SupervisorModel) View() string {
 	b.WriteString("\n" + m.styles.Divider.Render(strings.Repeat("─", totalWidth-2)) + "\n")
 	b.WriteString(m.styles.Footer.Render(centerText(footerText, totalWidth)))
 
-	rendered := m.styles.Box.Render(b.String())
-	if m.width > 0 && m.height > 0 {
-		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, rendered)
+	panelHeight := m.height - 4
+	if m.height <= 0 || panelHeight < 16 {
+		panelHeight = 22
 	}
+	rendered := m.styles.ActiveBox.Width(totalWidth).Height(panelHeight).Render(b.String())
 	return rendered + "\n"
 }
 

@@ -40,6 +40,7 @@ type SessionBrowserModel struct {
 	activeGroupIdx   int
 	activeSessionIdx int
 	focusSidebar     bool // true = sidebar has focus, false = session list has focus
+	showInspector    bool // true = display right telemetry inspector
 	width            int
 	height           int
 	styles           UIStyles
@@ -82,6 +83,7 @@ func NewSessionBrowserModel(groups []session.ProjectGroup, activeProfile *profil
 		activeProfile: activeProfile,
 		sharedMemory:  sharedMemory,
 		focusSidebar:  true,
+		showInspector: true,
 		styles:        DefaultStyles(),
 	}
 }
@@ -164,6 +166,9 @@ func (m SessionBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.activeSessionIdx++
 				}
 			}
+
+		case "i", "ctrl+s": // Toggle inspector sidebar
+			m.showInspector = !m.showInspector
 
 		case "enter":
 			curSess := m.currentSession()
@@ -288,6 +293,49 @@ func cleanOneLine(s string, maxLen int) string {
 	return clean
 }
 
+func (m SessionBrowserModel) gadgetDivider(title string, width int) string {
+	prefix := "─ " + title + " "
+	remaining := width - len([]rune(prefix))
+	if remaining < 0 {
+		return m.styles.GadgetHeader.Render(cleanOneLine(prefix, width))
+	}
+	return m.styles.GadgetHeader.Render(prefix) + m.styles.Divider.Render(strings.Repeat("─", remaining))
+}
+
+func (m SessionBrowserModel) renderContextBar(current, maxTokens int64, width int) string {
+	if maxTokens <= 0 {
+		maxTokens = 200_000
+	}
+	if width < 8 {
+		width = 8
+	}
+	ratio := float64(current) / float64(maxTokens)
+	if ratio > 1.0 {
+		ratio = 1.0
+	}
+	if ratio < 0 {
+		ratio = 0
+	}
+	filledLen := int(ratio * float64(width))
+	if filledLen > width {
+		filledLen = width
+	}
+	emptyLen := width - filledLen
+
+	filledStr := strings.Repeat("█", filledLen)
+	emptyStr := strings.Repeat("░", emptyLen)
+
+	var barRendered string
+	if ratio >= 0.85 {
+		barRendered = m.styles.BarDanger.Render(filledStr)
+	} else if ratio >= 0.70 {
+		barRendered = m.styles.BarWarn.Render(filledStr)
+	} else {
+		barRendered = m.styles.BarFilled.Render(filledStr)
+	}
+	return barRendered + m.styles.BarEmpty.Render(emptyStr)
+}
+
 func (m SessionBrowserModel) renderHeader() string {
 	var header strings.Builder
 	titleStr := " ClaudeSwap • Session Explorer "
@@ -367,7 +415,6 @@ func (m SessionBrowserModel) renderSidebar(width, height int) string {
 			}
 
 			countStr := fmt.Sprintf("(%d)", len(g.Sessions))
-			// innerWidth minus prefix(2), count, space(1)
 			availName := innerWidth - 2 - len(countStr) - 1
 			if availName < 3 {
 				availName = 3
@@ -505,114 +552,141 @@ func (m SessionBrowserModel) renderInspector(width, height int) string {
 		innerWidth = 20
 	}
 	var ib strings.Builder
-	ib.WriteString(m.styles.Subtitle.Render("🔍 LIVE CLAUDE TELEMETRY") + "\n\n")
 
 	curSess := m.currentSession()
 	if curSess == nil {
+		ib.WriteString(m.styles.Subtitle.Render("🔍 LIVE CLAUDE TELEMETRY") + "\n\n")
 		ib.WriteString(m.styles.TextMuted.Render("Select a session to inspect\nreal-time execution state.") + "\n")
-	} else {
-		// 1. Model, Turns & Token Efficiency
-		modelName := curSess.Model
-		if modelName == "" {
-			modelName = "claude-3-5-sonnet"
-		}
-		modelName = cleanOneLine(modelName, innerWidth-14)
-		turnStr := fmt.Sprintf("Turn #%d", curSess.TurnCount)
-		if curSess.TurnCount == 0 {
-			turnStr = "Active"
-		}
-		tokenStr := formatTokenCount(curSess.TotalTokens)
+		return m.styles.InspectorBox.Width(width).Height(height).Render(ib.String())
+	}
 
-		ib.WriteString(m.styles.Footer.Render("🧠 MODEL & TELEMETRY:") + "\n")
-		ib.WriteString(fmt.Sprintf(" %s • %s\n", m.styles.ReadyBadge.Render(modelName), turnStr))
-		if curSess.TotalTokens > 0 {
-			ib.WriteString(fmt.Sprintf(" %s\n", tokenStr))
+	// 1. Header row: Title + live status pill
+	titleStr := "🔍 LIVE CLAUDE TELEMETRY"
+	statusDiff := time.Since(curSess.UpdatedAt)
+	var statusPill string
+	if statusDiff < 10*time.Minute {
+		statusPill = m.styles.ReadyBadge.Render("● ACTIVE")
+	} else {
+		statusPill = m.styles.TextMuted.Render("○ IDLE")
+	}
+	hdr := fmt.Sprintf("%s  %s", titleStr, statusPill)
+	if len([]rune(hdr)) > innerWidth {
+		hdr = string([]rune(hdr)[:innerWidth])
+	}
+	ib.WriteString(m.styles.Subtitle.Render(hdr) + "\n\n")
+
+	// 2. Gadget: Context & Tokens
+	ib.WriteString(m.gadgetDivider("CONTEXT & TOKENS", innerWidth) + "\n")
+	modelName := curSess.Model
+	if modelName == "" {
+		modelName = "claude-3-5-sonnet"
+	}
+	modelName = cleanOneLine(modelName, innerWidth-14)
+	turnStr := fmt.Sprintf("Turn #%d", curSess.TurnCount)
+	if curSess.TurnCount == 0 {
+		turnStr = "Active"
+	}
+	ib.WriteString(fmt.Sprintf(" %s • %s\n", m.styles.ReadyBadge.Render(modelName), turnStr))
+
+	tokenMax := int64(200_000)
+	if curSess.TotalTokens > tokenMax {
+		tokenMax = curSess.TotalTokens
+	}
+	pct := float64(curSess.TotalTokens) / float64(tokenMax) * 100.0
+	barWidth := innerWidth - 8
+	if barWidth > 20 {
+		barWidth = 20
+	}
+	barStr := m.renderContextBar(curSess.TotalTokens, tokenMax, barWidth)
+	tokenStr := formatTokenCount(curSess.TotalTokens)
+	gaugeLine := fmt.Sprintf(" %s %s (%.0f%%)", barStr, tokenStr, pct)
+	if len([]rune(gaugeLine)) > innerWidth {
+		gaugeLine = string([]rune(gaugeLine)[:innerWidth])
+	}
+	ib.WriteString(gaugeLine + "\n\n")
+
+	// 3. Gadget: Inner Monologue / Thinking
+	if curSess.Thinking != "" {
+		ib.WriteString(m.gadgetDivider("INNER MONOLOGUE", innerWidth) + "\n")
+		th := cleanOneLine(curSess.Thinking, innerWidth*2)
+		if len([]rune(th)) > innerWidth-4 {
+			th = cleanOneLine(th, innerWidth-4)
+		}
+		ib.WriteString(fmt.Sprintf(" “%s”\n\n", th))
+	}
+
+	// 4. Gadget: Current Work
+	ib.WriteString(m.gadgetDivider("CURRENT WORK", innerWidth) + "\n")
+	act := curSess.LastActivity
+	if act == "" {
+		act = "Idle / Awaiting instructions"
+	}
+	act = cleanOneLine(act, innerWidth-4)
+	ib.WriteString(fmt.Sprintf(" ⚡ %s\n\n", act))
+
+	// 5. Gadget: Execution Trail (Recent)
+	if len(curSess.Timeline) > 0 {
+		ib.WriteString(m.gadgetDivider("EXECUTION TRAIL", innerWidth) + "\n")
+		count := 0
+		for _, step := range curSess.Timeline {
+			if count >= 3 {
+				break
+			}
+			dispStep := cleanOneLine(step, innerWidth-4)
+			ib.WriteString(fmt.Sprintf("  %s\n", dispStep))
+			count++
 		}
 		ib.WriteString("\n")
+	}
 
-		// 2. Inner Monologue / Thinking
-		if curSess.Thinking != "" {
-			ib.WriteString(m.styles.Footer.Render("💭 INNER MONOLOGUE / THINKING:") + "\n")
-			th := cleanOneLine(curSess.Thinking, innerWidth*2)
-			if len(th) > innerWidth-4 {
-				th = cleanOneLine(th, innerWidth-4)
+	// 6. Gadget: Files Touched
+	if len(curSess.FilesTouched) > 0 {
+		ib.WriteString(m.gadgetDivider(fmt.Sprintf("FILES TOUCHED (%d)", len(curSess.FilesTouched)), innerWidth) + "\n")
+		count := 0
+		for _, f := range curSess.FilesTouched {
+			if count >= 3 {
+				break
 			}
-			ib.WriteString(fmt.Sprintf(" “%s”\n\n", th))
+			dispFile := cleanOneLine(f, innerWidth-6)
+			ib.WriteString(fmt.Sprintf("  ✏️ %s\n", dispFile))
+			count++
 		}
+		ib.WriteString("\n")
+	}
 
-		// 3. Current Work
-		ib.WriteString(m.styles.Footer.Render("⚡ CURRENT WORK:") + "\n")
-		act := curSess.LastActivity
-		if act == "" {
-			act = "Idle / Awaiting instructions"
-		}
-		act = cleanOneLine(act, innerWidth-2)
-		ib.WriteString(" " + act + "\n\n")
-
-		// 4. Execution Journey (Breadcrumbs)
-		if len(curSess.Timeline) > 0 {
-			ib.WriteString(m.styles.Footer.Render("🛠 EXECUTION TRAIL (RECENT):") + "\n")
-			count := 0
-			for _, step := range curSess.Timeline {
-				if count >= 4 {
-					break
-				}
-				dispStep := cleanOneLine(step, innerWidth-4)
-				ib.WriteString(fmt.Sprintf("  %s\n", dispStep))
-				count++
+	// 7. Gadget: Web Sources Visited
+	if len(curSess.WebSources) > 0 {
+		ib.WriteString(m.gadgetDivider("WEB SOURCES", innerWidth) + "\n")
+		count := 0
+		for _, src := range curSess.WebSources {
+			if count >= 2 {
+				break
 			}
-			ib.WriteString("\n")
+			dispSrc := strings.TrimPrefix(src, "https://")
+			dispSrc = strings.TrimPrefix(dispSrc, "http://")
+			dispSrc = cleanOneLine(dispSrc, innerWidth-6)
+			ib.WriteString(fmt.Sprintf("  🔗 %s\n", dispSrc))
+			count++
 		}
+		ib.WriteString("\n")
+	}
 
-		// 5. Files Touched
-		if len(curSess.FilesTouched) > 0 {
-			ib.WriteString(m.styles.Footer.Render(fmt.Sprintf("📁 FILES TOUCHED (%d):", len(curSess.FilesTouched))) + "\n")
-			count := 0
-			for _, f := range curSess.FilesTouched {
-				if count >= 3 {
-					break
-				}
-				dispFile := cleanOneLine(f, innerWidth-4)
-				ib.WriteString(fmt.Sprintf("  %s\n", dispFile))
-				count++
-			}
-			ib.WriteString("\n")
+	// 8. Gadget: Context & Git
+	ib.WriteString(m.gadgetDivider("CONTEXT & GIT", innerWidth) + "\n")
+	branch := curSess.GitBranch
+	if branch == "" {
+		branch = "main"
+	}
+	branch = cleanOneLine(branch, innerWidth-12)
+	ib.WriteString(fmt.Sprintf("  🌿 Branch: %s\n", branch))
+	if curSess.ProjectCWD != "" {
+		cwd := curSess.ProjectCWD
+		availPath := innerWidth - 12
+		if len(cwd) > availPath && availPath > 5 {
+			cwd = "..." + cwd[len(cwd)-(availPath-3):]
 		}
-
-		// 6. Web Sources Visited
-		if len(curSess.WebSources) > 0 {
-			ib.WriteString(m.styles.Footer.Render("🔗 WEB SOURCES VISITED:") + "\n")
-			count := 0
-			for _, src := range curSess.WebSources {
-				if count >= 2 {
-					break
-				}
-				dispSrc := strings.TrimPrefix(src, "https://")
-				dispSrc = strings.TrimPrefix(dispSrc, "http://")
-				dispSrc = cleanOneLine(dispSrc, innerWidth-6)
-				ib.WriteString(fmt.Sprintf("  • %s\n", dispSrc))
-				count++
-			}
-			ib.WriteString("\n")
-		}
-
-		// 7. Context
-		ib.WriteString(m.styles.Footer.Render("🌿 CONTEXT:") + "\n")
-		branch := curSess.GitBranch
-		if branch == "" {
-			branch = "main"
-		}
-		branch = cleanOneLine(branch, innerWidth-12)
-		ib.WriteString(fmt.Sprintf("  Branch: %s\n", branch))
-		if curSess.ProjectCWD != "" {
-			cwd := curSess.ProjectCWD
-			availPath := innerWidth - 10
-			if len(cwd) > availPath && availPath > 5 {
-				cwd = "..." + cwd[len(cwd)-(availPath-3):]
-			}
-			cwd = cleanOneLine(cwd, innerWidth-10)
-			ib.WriteString(fmt.Sprintf("  Path:   %s\n", cwd))
-		}
+		cwd = cleanOneLine(cwd, innerWidth-12)
+		ib.WriteString(fmt.Sprintf("  📁 Path:   %s\n", cwd))
 	}
 
 	return m.styles.InspectorBox.Width(width).Height(height).Render(ib.String())
@@ -640,22 +714,22 @@ func (m SessionBrowserModel) View() string {
 		panelHeight = 20
 	}
 
-	showThreeColumns := totalWidth >= 96
+	showThreeColumns := totalWidth >= 92 && m.showInspector
 	var sidebarWidth, centerWidth, inspectorWidth int
 
 	if showThreeColumns {
 		sidebarWidth = totalWidth * 22 / 100
 		if sidebarWidth < 24 {
 			sidebarWidth = 24
-		} else if sidebarWidth > 30 {
-			sidebarWidth = 30
+		} else if sidebarWidth > 34 {
+			sidebarWidth = 34
 		}
 
 		inspectorWidth = totalWidth * 36 / 100
 		if inspectorWidth < 38 {
 			inspectorWidth = 38
-		} else if inspectorWidth > 46 {
-			inspectorWidth = 46
+		} else if inspectorWidth > 50 {
+			inspectorWidth = 50
 		}
 
 		centerWidth = totalWidth - sidebarWidth - inspectorWidth - 2
@@ -663,11 +737,11 @@ func (m SessionBrowserModel) View() string {
 			centerWidth = 32
 		}
 	} else {
-		sidebarWidth = totalWidth * 28 / 100
+		sidebarWidth = totalWidth * 25 / 100
 		if sidebarWidth < 22 {
 			sidebarWidth = 22
-		} else if sidebarWidth > 30 {
-			sidebarWidth = 30
+		} else if sidebarWidth > 32 {
+			sidebarWidth = 32
 		}
 		centerWidth = totalWidth - sidebarWidth - 1
 		if centerWidth < 32 {
@@ -696,7 +770,7 @@ func (m SessionBrowserModel) View() string {
 		}
 		footerText = fmt.Sprintf("⚠ PERMANENTLY DELETE session %s? Press [y] to confirm, [n] to cancel", sid)
 	} else {
-		footerText = "Tab: Switch Pane • 1-9/[]: Tabs • Enter: Resume • n: New Session • s: Switch Profile • m: Memory • d: Delete • q: Back"
+		footerText = "Tab: Pane • 1-9/[]: Tabs • i: Toggle Inspector • Enter: Resume • n: New • s: Profile • x: Matrix • q: Back"
 	}
 	footer := m.styles.Footer.Render(centerText(footerText, totalWidth))
 

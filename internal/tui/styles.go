@@ -29,6 +29,11 @@ type UIStyles struct {
 	BranchBadge    lipgloss.Style
 	HashBadge      lipgloss.Style
 	TextMuted      lipgloss.Style
+	GadgetHeader   lipgloss.Style
+	BarFilled      lipgloss.Style
+	BarWarn        lipgloss.Style
+	BarDanger      lipgloss.Style
+	BarEmpty       lipgloss.Style
 }
 
 // DefaultStyles returns modern, polished styles respecting NO_COLOR.
@@ -58,6 +63,11 @@ func DefaultStyles() UIStyles {
 			BranchBadge:    lipgloss.NewStyle(),
 			HashBadge:      lipgloss.NewStyle(),
 			TextMuted:      lipgloss.NewStyle(),
+			GadgetHeader:   lipgloss.NewStyle().Bold(true),
+			BarFilled:      lipgloss.NewStyle(),
+			BarWarn:        lipgloss.NewStyle(),
+			BarDanger:      lipgloss.NewStyle(),
+			BarEmpty:       lipgloss.NewStyle(),
 		}
 	}
 
@@ -132,5 +142,16 @@ func DefaultStyles() UIStyles {
 		SelectedAction: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(primaryColor),
+		GadgetHeader: lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("#88C0D0")),
+		BarFilled: lipgloss.NewStyle().
+			Foreground(accentColor),
+		BarWarn: lipgloss.NewStyle().
+			Foreground(warnColor),
+		BarDanger: lipgloss.NewStyle().
+			Foreground(loggedOutColor),
+		BarEmpty: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#4C566A")),
 	}
 }
