@@ -12,13 +12,14 @@ type UIStyles struct {
 	Title         lipgloss.Style
 	Subtitle      lipgloss.Style
 	ActiveItem    lipgloss.Style
-	InactiveItem  lipgloss.Style
-	ReadyBadge    lipgloss.Style
-	WarnBadge     lipgloss.Style
-	UnknownBadge  lipgloss.Style
-	Footer        lipgloss.Style
-	Divider       lipgloss.Style
-	ActionItem    lipgloss.Style
+	InactiveItem   lipgloss.Style
+	ReadyBadge     lipgloss.Style
+	WarnBadge      lipgloss.Style
+	LoggedOutBadge lipgloss.Style
+	UnknownBadge   lipgloss.Style
+	Footer         lipgloss.Style
+	Divider        lipgloss.Style
+	ActionItem     lipgloss.Style
 	SelectedAction lipgloss.Style
 }
 
@@ -28,17 +29,18 @@ func DefaultStyles() UIStyles {
 
 	if noColor {
 		return UIStyles{
-			Box:           lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1),
-			Title:         lipgloss.NewStyle().Bold(true),
-			Subtitle:      lipgloss.NewStyle(),
-			ActiveItem:    lipgloss.NewStyle().Bold(true),
-			InactiveItem:  lipgloss.NewStyle(),
-			ReadyBadge:    lipgloss.NewStyle(),
-			WarnBadge:     lipgloss.NewStyle(),
-			UnknownBadge:  lipgloss.NewStyle(),
-			Footer:        lipgloss.NewStyle(),
-			Divider:       lipgloss.NewStyle(),
-			ActionItem:    lipgloss.NewStyle(),
+			Box:            lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1),
+			Title:          lipgloss.NewStyle().Bold(true),
+			Subtitle:       lipgloss.NewStyle(),
+			ActiveItem:     lipgloss.NewStyle().Bold(true),
+			InactiveItem:   lipgloss.NewStyle(),
+			ReadyBadge:     lipgloss.NewStyle(),
+			WarnBadge:      lipgloss.NewStyle(),
+			LoggedOutBadge: lipgloss.NewStyle(),
+			UnknownBadge:   lipgloss.NewStyle(),
+			Footer:         lipgloss.NewStyle(),
+			Divider:        lipgloss.NewStyle(),
+			ActionItem:     lipgloss.NewStyle(),
 			SelectedAction: lipgloss.NewStyle().Bold(true),
 		}
 	}
@@ -46,6 +48,7 @@ func DefaultStyles() UIStyles {
 	primaryColor := lipgloss.Color("#7D56F4")
 	accentColor := lipgloss.Color("#04B575")
 	warnColor := lipgloss.Color("#FFAE00")
+	loggedOutColor := lipgloss.Color("#E06C75")
 	mutedColor := lipgloss.Color("#888888")
 	subtleBorder := lipgloss.Color("#3C3C3C")
 
@@ -70,6 +73,9 @@ func DefaultStyles() UIStyles {
 		WarnBadge: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(warnColor),
+		LoggedOutBadge: lipgloss.NewStyle().
+			Bold(true).
+			Foreground(loggedOutColor),
 		UnknownBadge: lipgloss.NewStyle().
 			Foreground(mutedColor),
 		Footer: lipgloss.NewStyle().

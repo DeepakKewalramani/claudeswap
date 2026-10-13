@@ -43,6 +43,8 @@ func newStatusCmd(app *AppContext) *cobra.Command {
 				return nil
 			}
 
+			app.Manager.PreloadStatuses(profiles)
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 			fmt.Fprintln(w, "NAME\tID\tSHORTCUT\tSTATUS")
 			fmt.Fprintln(w, "----\t--\t--------\t------")
@@ -60,8 +62,10 @@ func formatStatus(s profile.Status) string {
 	switch s {
 	case profile.StatusReady:
 		return "✓ Ready"
-	case profile.StatusLoginRequired:
-		return "⚠ Login required"
+	case profile.StatusSessionOut:
+		return "⚠ Session out"
+	case profile.StatusLoggedOut, profile.StatusLoginRequired:
+		return "○ Logged out"
 	default:
 		return "? Unknown"
 	}

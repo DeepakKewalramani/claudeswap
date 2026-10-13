@@ -87,8 +87,10 @@ func formatStatusBadge(styles UIStyles, status profile.Status) string {
 	switch status {
 	case profile.StatusReady:
 		return styles.ReadyBadge.Render("✓ Ready")
-	case profile.StatusLoginRequired:
-		return styles.WarnBadge.Render("⚠ Login required")
+	case profile.StatusSessionOut:
+		return styles.WarnBadge.Render("⚠ Session out")
+	case profile.StatusLoggedOut, profile.StatusLoginRequired:
+		return styles.LoggedOutBadge.Render("○ Logged out")
 	default:
 		return styles.UnknownBadge.Render("? Unknown")
 	}

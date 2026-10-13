@@ -56,8 +56,8 @@ If no profile is specified, the default profile is used.`,
 			}
 
 			status := app.Manager.GetStatus(p)
-			if status == profile.StatusLoginRequired {
-				fmt.Printf("⚠ This profile may require authentication.\n\nProfile:\n  %s\n\nStarting Claude Code...\n", p.Name)
+			if status == profile.StatusLoggedOut || status == profile.StatusLoginRequired || status == profile.StatusSessionOut {
+				fmt.Printf("⚠ Profile %q requires authentication (%s).\n\nProfile:\n  %s\n\nStarting Claude Code...\n", p.Name, status, p.Name)
 			}
 
 			cfg, _ := app.CfgStore.Load()

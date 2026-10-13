@@ -11,9 +11,13 @@ const CurrentProfileSchemaVersion = 1
 type Status string
 
 const (
-	// StatusReady indicates the profile directory exists and has session/config state.
+	// StatusReady indicates the profile is connected with an active session.
 	StatusReady Status = "Ready"
-	// StatusLoginRequired indicates the profile exists but no session or configuration has been initialized yet.
+	// StatusLoggedOut indicates the profile exists but is not connected / logged out.
+	StatusLoggedOut Status = "Logged out"
+	// StatusSessionOut indicates the profile was previously connected but the session has expired or requires re-authentication.
+	StatusSessionOut Status = "Session out"
+	// StatusLoginRequired indicates the profile exists but no session or configuration has been initialized yet (kept for compatibility).
 	StatusLoginRequired Status = "Login required"
 	// StatusUnknown indicates status could not be determined without inspecting sensitive stores.
 	StatusUnknown Status = "Unknown"

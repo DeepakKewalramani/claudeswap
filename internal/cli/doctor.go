@@ -108,14 +108,17 @@ func runDoctorCheck(app *AppContext) error {
 
 	// 6. Profiles breakdown
 	if storeData != nil && len(storeData.Profiles) > 0 {
+		app.Manager.PreloadStatuses(storeData.Profiles)
 		fmt.Println("\nProfiles:")
 		for _, p := range storeData.Profiles {
 			status := app.Manager.GetStatus(&p)
 			switch status {
 			case profile.StatusReady:
 				fmt.Printf("  ✓ %-20s (ready)\n", p.Name)
-			case profile.StatusLoginRequired:
-				fmt.Printf("  ⚠ %-20s (requires authentication)\n", p.Name)
+			case profile.StatusSessionOut:
+				fmt.Printf("  ⚠ %-20s (session out / re-auth required)\n", p.Name)
+			case profile.StatusLoggedOut, profile.StatusLoginRequired:
+				fmt.Printf("  ○ %-20s (logged out)\n", p.Name)
 			default:
 				fmt.Printf("  ? %-20s (unknown status)\n", p.Name)
 			}

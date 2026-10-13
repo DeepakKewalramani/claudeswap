@@ -1,6 +1,8 @@
 package claude
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 var ErrClaudeNotFound = errors.New("Claude Code executable not found")
@@ -130,4 +133,33 @@ func (d *Detector) GetVersion(claudePath string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+// CheckAuthStatus runs `claude auth status --json` with CLAUDE_CONFIG_DIR set to configDir.
+// Returns whether the profile is currently logged in.
+func (d *Detector) CheckAuthStatus(configDir string) (bool, error) {
+	claudePath, err := d.FindExecutable()
+	if err != nil {
+		return false, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, claudePath, "auth", "status", "--json")
+	cmd.Env = BuildEnvironment(configDir)
+
+	out, err := cmd.Output()
+	if err != nil && len(out) == 0 {
+		return false, err
+	}
+
+	var res struct {
+		LoggedIn bool `json:"loggedIn"`
+	}
+	if err := json.Unmarshal(out, &res); err != nil {
+		return false, err
+	}
+
+	return res.LoggedIn, nil
 }

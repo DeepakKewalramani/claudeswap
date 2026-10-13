@@ -44,6 +44,7 @@ func NewAppContext() (*AppContext, error) {
 	}
 
 	detector := claude.NewDetector(configuredClaude)
+	mgr.SetStatusChecker(detector.CheckAuthStatus)
 	launcher := claude.NewLauncher(detector, paths)
 	scMgr := shortcut.NewManager(paths)
 
@@ -109,6 +110,8 @@ func runTUI(app *AppContext) error {
 		fmt.Fprintf(os.Stderr, "Error loading profiles: %v\n", err)
 		return err
 	}
+
+	app.Manager.PreloadStatuses(profiles)
 
 	var items []tui.ProfileWithStatus
 	for _, p := range profiles {

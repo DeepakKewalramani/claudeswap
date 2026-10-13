@@ -122,11 +122,19 @@ func PromptHandoffMenu(app *AppContext, currentProfile *profile.Profile) (*profi
 	}
 	fmt.Println()
 
+	app.Manager.PreloadStatuses(candidates)
 	for i, c := range candidates {
 		status := app.Manager.GetStatus(&c)
-		statusBadge := "✓ Ready"
-		if status == profile.StatusLoginRequired {
-			statusBadge = "⚠ Login required"
+		var statusBadge string
+		switch status {
+		case profile.StatusReady:
+			statusBadge = "✓ Ready"
+		case profile.StatusSessionOut:
+			statusBadge = "⚠ Session out"
+		case profile.StatusLoggedOut, profile.StatusLoginRequired:
+			statusBadge = "○ Logged out"
+		default:
+			statusBadge = "? Unknown"
 		}
 		fmt.Printf("  [%d] %-20s (%s)  %s\n", i+1, c.Name, c.Shortcut, statusBadge)
 	}

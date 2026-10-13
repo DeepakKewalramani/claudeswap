@@ -30,6 +30,8 @@ func newListCmd(app *AppContext) *cobra.Command {
 			fmt.Println("ClaudeSwap Profiles")
 			fmt.Println()
 
+			app.Manager.PreloadStatuses(profiles)
+
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
 			fmt.Fprintln(w, "NAME\tSHORTCUT\tSTATUS")
 			fmt.Fprintln(w, "----\t--------\t------")
@@ -40,8 +42,10 @@ func newListCmd(app *AppContext) *cobra.Command {
 				switch status {
 				case profile.StatusReady:
 					statusStr = "✓ Ready"
-				case profile.StatusLoginRequired:
-					statusStr = "⚠ Login required"
+				case profile.StatusSessionOut:
+					statusStr = "⚠ Session out"
+				case profile.StatusLoggedOut, profile.StatusLoginRequired:
+					statusStr = "○ Logged out"
 				default:
 					statusStr = "? Unknown"
 				}
