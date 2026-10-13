@@ -134,7 +134,26 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 		t.Fatalf("Expected result action 'delete', got %+v", m.Result)
 	}
 
-	// 10. Verify 3-column wide view with live inspector and web sources
+	// 10. Test Tab Switching with '2' and ']'
+	m = NewSessionBrowserModel(groups, testProf, true)
+	if len(m.tabs) != 2 {
+		t.Fatalf("Expected 2 tabs, got %d", len(m.tabs))
+	}
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}})
+	m = updated.(SessionBrowserModel)
+	if m.activeTabIdx != 1 || m.activeGroupIdx != 1 {
+		t.Errorf("Expected tab 2 selection, got activeTabIdx=%d, activeGroupIdx=%d", m.activeTabIdx, m.activeGroupIdx)
+	}
+
+	// Test 'x' for Mission Control matrix
+	m = NewSessionBrowserModel(groups, testProf, true)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	m = updated.(SessionBrowserModel)
+	if m.Result == nil || m.Result.Action != "matrix" {
+		t.Fatalf("Expected result action 'matrix', got %+v", m.Result)
+	}
+
+	// 11. Verify 3-column wide view with live inspector, web sources, and tab strip
 	m = NewSessionBrowserModel(groups, testProf, true)
 	m.focusSidebar = false
 	m.width = 110
@@ -142,6 +161,9 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 	view := m.View()
 	if !strings.Contains(view, "Folders") || !strings.Contains(view, "ritik-test") || !strings.Contains(view, "LIVE CLAUDE TELEMETRY") {
 		t.Errorf("View missing key 3-column elements:\n%s", view)
+	}
+	if !strings.Contains(view, "Tabs:") || !strings.Contains(view, "autopredict") {
+		t.Errorf("View missing tabs strip:\n%s", view)
 	}
 	if !strings.Contains(view, "Sarvam AI") || !strings.Contains(view, "docs.sarvam.ai/pricing") {
 		t.Errorf("View missing live activity and web sources inspector elements:\n%s", view)

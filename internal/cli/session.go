@@ -161,10 +161,16 @@ func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) err
 		res := resModel.Result
 		switch res.Action {
 		case "resume":
-			return resumeSessionWithProfile(app, prof, res.Session, res.Group)
+			_ = resumeSessionWithProfileInteractive(app, prof, res.Session, res.Group)
+			continue
 
 		case "new":
-			return launchNewSessionWithProfile(app, prof, res.Group)
+			_ = launchNewSessionWithProfileInteractive(app, prof, res.Group)
+			continue
+
+		case "matrix":
+			_ = runSupervisorTUI(app)
+			continue
 
 		case "switch_profile":
 			nextProf, proceed := PromptHandoffMenu(app, prof)
@@ -201,6 +207,56 @@ func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) err
 
 		return nil
 	}
+}
+
+func resumeSessionWithProfileInteractive(app *AppContext, p *profile.Profile, sess *session.Session, group *session.ProjectGroup) error {
+	fmt.Printf("\n✓ Attaching to session %s (%s)\n", sess.ID[:8], sess.Title)
+	fmt.Printf("✓ Profile: %s (%s)\n", p.Name, p.Shortcut)
+	if sess.ProjectCWD != "" {
+		fmt.Printf("✓ Directory: %s\n\n", sess.ProjectCWD)
+		if info, err := os.Stat(sess.ProjectCWD); err == nil && info.IsDir() {
+			_ = os.Chdir(sess.ProjectCWD)
+		}
+	}
+
+	cfg, _ := app.CfgStore.Load()
+	shared := cfg != nil && cfg.SharedContext
+
+	resumeArgs := []string{"--resume", sess.ID}
+	_, err := app.Launcher.Launch(p, resumeArgs, shared)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "✗ Error resuming session: %v\n", err)
+	}
+	return nil
+}
+
+func launchNewSessionWithProfileInteractive(app *AppContext, p *profile.Profile, group *session.ProjectGroup) error {
+	folderName := "Current Folder"
+	cwd := ""
+	if group != nil {
+		folderName = group.Name
+		cwd = group.CWD
+	}
+	if cwd == "" {
+		cwd, _ = os.Getwd()
+	}
+
+	fmt.Printf("\n✓ Starting new Claude Code session in %s\n", folderName)
+	fmt.Printf("✓ Profile: %s (%s)\n", p.Name, p.Shortcut)
+	fmt.Printf("✓ Directory: %s\n\n", cwd)
+
+	if info, err := os.Stat(cwd); err == nil && info.IsDir() {
+		_ = os.Chdir(cwd)
+	}
+
+	cfg, _ := app.CfgStore.Load()
+	shared := cfg != nil && cfg.SharedContext
+
+	_, err := app.Launcher.Launch(p, nil, shared)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "✗ Error launching Claude: %v\n", err)
+	}
+	return nil
 }
 
 func launchNewSessionWithProfile(app *AppContext, p *profile.Profile, group *session.ProjectGroup) error {

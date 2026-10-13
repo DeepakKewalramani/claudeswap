@@ -19,9 +19,22 @@ type SessionBrowserResult struct {
 	Profile *profile.Profile
 }
 
+// SessionTab represents an open tab across workspaces/terminals.
+type SessionTab struct {
+	Index       int
+	ProjectName string
+	SessionID   string
+	GitBranch   string
+	StatusBadge string
+	GroupIdx    int
+	SessionIdx  int
+}
+
 // SessionBrowserModel provides a two/three-column responsive TUI with a folder sidebar, session list, and activity inspector.
 type SessionBrowserModel struct {
 	groups           []session.ProjectGroup
+	tabs             []SessionTab
+	activeTabIdx     int
 	activeProfile    *profile.Profile
 	sharedMemory     bool
 	activeGroupIdx   int
@@ -37,8 +50,35 @@ type SessionBrowserModel struct {
 
 // NewSessionBrowserModel initializes the session explorer TUI with profile and memory state.
 func NewSessionBrowserModel(groups []session.ProjectGroup, activeProfile *profile.Profile, sharedMemory bool) SessionBrowserModel {
+	var tabs []SessionTab
+	tabNum := 1
+	for gi, g := range groups {
+		if len(g.Sessions) > 0 && tabNum <= 8 {
+			badge := "🟢"
+			if time.Since(g.Sessions[0].UpdatedAt) > 2*time.Hour {
+				badge = "⚪"
+			}
+			shortID := g.Sessions[0].ID
+			if len(shortID) > 8 {
+				shortID = shortID[:8]
+			}
+			tabs = append(tabs, SessionTab{
+				Index:       tabNum,
+				ProjectName: g.Name,
+				SessionID:   shortID,
+				GitBranch:   g.Sessions[0].GitBranch,
+				StatusBadge: badge,
+				GroupIdx:    gi,
+				SessionIdx:  0,
+			})
+			tabNum++
+		}
+	}
+
 	return SessionBrowserModel{
 		groups:        groups,
+		tabs:          tabs,
+		activeTabIdx:  0,
 		activeProfile: activeProfile,
 		sharedMemory:  sharedMemory,
 		focusSidebar:  true,
@@ -148,6 +188,45 @@ func (m SessionBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 
+		case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			if len(msg.Runes) > 0 {
+				tabIdx := int(msg.Runes[0] - '1')
+				if tabIdx < len(m.tabs) {
+					tab := m.tabs[tabIdx]
+					m.activeGroupIdx = tab.GroupIdx
+					m.activeSessionIdx = tab.SessionIdx
+					m.activeTabIdx = tabIdx
+					m.focusSidebar = false
+				}
+			}
+
+		case "[":
+			if len(m.tabs) > 0 {
+				m.activeTabIdx = (m.activeTabIdx - 1 + len(m.tabs)) % len(m.tabs)
+				tab := m.tabs[m.activeTabIdx]
+				m.activeGroupIdx = tab.GroupIdx
+				m.activeSessionIdx = tab.SessionIdx
+				m.focusSidebar = false
+			}
+
+		case "]":
+			if len(m.tabs) > 0 {
+				m.activeTabIdx = (m.activeTabIdx + 1) % len(m.tabs)
+				tab := m.tabs[m.activeTabIdx]
+				m.activeGroupIdx = tab.GroupIdx
+				m.activeSessionIdx = tab.SessionIdx
+				m.focusSidebar = false
+			}
+
+		case "x": // Jump to 20-terminal Multi-Session Matrix
+			m.Result = &SessionBrowserResult{
+				Action:  "matrix",
+				Session: m.currentSession(),
+				Group:   m.currentGroup(),
+				Profile: m.activeProfile,
+			}
+			return m, tea.Quit
+
 		case "s", "p": // Switch profile
 			m.Result = &SessionBrowserResult{
 				Action:  "switch_profile",
@@ -167,7 +246,7 @@ func (m SessionBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 
-		case "d", "x": // Delete
+		case "d": // Delete session
 			if m.currentSession() != nil {
 				m.ConfirmDelete = true
 			}
@@ -221,7 +300,24 @@ func (m SessionBrowserModel) View() string {
 	} else {
 		memBadge = m.styles.LoggedOutBadge.Render(" Memory: OFF (Isolated) ")
 	}
-	header.WriteString(" " + memBadge + "\n\n")
+	header.WriteString(" " + memBadge + "\n")
+
+	// Render Tabs Strip
+	if len(m.tabs) > 0 {
+		var tb strings.Builder
+		tb.WriteString(m.styles.Footer.Render("Tabs: "))
+		for i, tab := range m.tabs {
+			label := fmt.Sprintf("[%d] %s (%s) %s", tab.Index, tab.ProjectName, tab.SessionID, tab.StatusBadge)
+			if i == m.activeTabIdx {
+				tb.WriteString(m.styles.SelectedAction.Render(" "+label+" ") + " ")
+			} else {
+				tb.WriteString(m.styles.ActionItem.Render(" "+label+" ") + " ")
+			}
+		}
+		tb.WriteString(m.styles.Footer.Render("• [+] New (n) • [x] Matrix (20)"))
+		header.WriteString(tb.String() + "\n")
+	}
+	header.WriteString("\n")
 
 	showThreeColumns := totalWidth >= 96
 
@@ -480,7 +576,7 @@ func (m SessionBrowserModel) View() string {
 		curS := m.currentSession()
 		footerText = fmt.Sprintf("⚠ PERMANENTLY DELETE session %s? Press [y] to confirm, [n] to cancel", curS.ID[:8])
 	} else {
-		footerText = "Tab: Switch Pane • Enter: Resume • n: New Session • s: Switch Profile • m: Memory • d: Delete • q: Back"
+		footerText = "Tab: Pane • 1-9/[]: Tabs • Enter: Resume • n: New Tab • s: Switch Profile • x: Matrix • q: Back"
 	}
 	footer := m.styles.Footer.Render(centerText(footerText, totalWidth))
 
