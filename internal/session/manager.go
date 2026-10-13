@@ -228,8 +228,9 @@ func parseSessionHeader(sessionID, filePath string, fi os.FileInfo) Session {
 
 	lineCount := 0
 	seenSources := make(map[string]bool)
+	seenFiles := make(map[string]bool)
 
-	for scanner.Scan() && lineCount < 100 {
+	for scanner.Scan() && lineCount < 500 {
 		lineCount++
 		line := scanner.Bytes()
 		if len(line) == 0 {
@@ -260,26 +261,59 @@ func parseSessionHeader(sessionID, filePath string, fi os.FileInfo) Session {
 			}
 		}
 
-		// Tool & Activity extraction
-		extractToolActivity(raw, &sess, seenSources)
+		// Deep Tool & Telemetry extraction
+		extractTelemetry(raw, &sess, seenSources, seenFiles)
 	}
 
 	return sess
 }
 
-func extractToolActivity(raw map[string]any, sess *Session, seenSources map[string]bool) {
+func extractTelemetry(raw map[string]any, sess *Session, seenSources map[string]bool, seenFiles map[string]bool) {
 	entryType, _ := raw["type"].(string)
+	if entryType == "user" || entryType == "assistant" {
+		sess.TurnCount++
+	}
+
+	// Direct tool_use
 	if entryType == "tool_use" {
-		recordTool(raw, sess, seenSources)
+		recordTool(raw, sess, seenSources, seenFiles)
 		return
 	}
 
+	// Message content
 	if msg, ok := raw["message"].(map[string]any); ok {
+		if m, ok := msg["model"].(string); ok && m != "" && sess.Model == "" {
+			sess.Model = m
+		}
+		if usage, ok := msg["usage"].(map[string]any); ok {
+			var total int64
+			if r, ok := usage["cache_read_input_tokens"].(float64); ok {
+				total += int64(r)
+			}
+			if in, ok := usage["input_tokens"].(float64); ok {
+				total += int64(in)
+			}
+			if out, ok := usage["output_tokens"].(float64); ok {
+				total += int64(out)
+			}
+			if total > 0 {
+				sess.TotalTokens = total
+			}
+		}
+
 		if content, ok := msg["content"].([]any); ok {
 			for _, item := range content {
 				if itemMap, ok := item.(map[string]any); ok {
-					if itType, _ := itemMap["type"].(string); itType == "tool_use" {
-						recordTool(itemMap, sess, seenSources)
+					itType, _ := itemMap["type"].(string)
+					if itType == "thinking" {
+						if th, ok := itemMap["thinking"].(string); ok {
+							trimmed := strings.TrimSpace(th)
+							if trimmed != "" {
+								sess.Thinking = trimmed
+							}
+						}
+					} else if itType == "tool_use" {
+						recordTool(itemMap, sess, seenSources, seenFiles)
 					}
 				}
 			}
@@ -287,21 +321,26 @@ func extractToolActivity(raw map[string]any, sess *Session, seenSources map[stri
 	}
 }
 
-func recordTool(toolMap map[string]any, sess *Session, seenSources map[string]bool) {
+func recordTool(toolMap map[string]any, sess *Session, seenSources map[string]bool, seenFiles map[string]bool) {
 	name, _ := toolMap["name"].(string)
 	input, _ := toolMap["input"].(map[string]any)
 	if input == nil {
 		return
 	}
 
+	var stepSummary string
+
 	switch name {
 	case "WebSearch":
 		if q, ok := input["query"].(string); ok && q != "" {
-			sess.LastActivity = "WebSearch: " + cleanTitle(q)
+			cleanQ := cleanTitle(q)
+			sess.LastActivity = "WebSearch: " + cleanQ
+			stepSummary = "🌐 Search: " + cleanQ
 		}
 	case "WebFetch":
 		if u, ok := input["url"].(string); ok && u != "" {
 			sess.LastActivity = "WebFetch: " + u
+			stepSummary = "🔗 Fetch: " + u
 			if !seenSources[u] && len(sess.WebSources) < 6 {
 				seenSources[u] = true
 				sess.WebSources = append(sess.WebSources, u)
@@ -314,14 +353,34 @@ func recordTool(toolMap map[string]any, sess *Session, seenSources map[string]bo
 				trimmed = trimmed[:37] + "..."
 			}
 			sess.LastActivity = "Bash: " + trimmed
+			stepSummary = "💻 Bash: " + trimmed
 		}
 	case "Read":
 		if path, ok := input["file_path"].(string); ok && path != "" {
-			sess.LastActivity = "Read: " + filepath.Base(path)
+			base := filepath.Base(path)
+			sess.LastActivity = "Read: " + base
+			stepSummary = "📄 Read: " + base
+			if !seenFiles[base] && len(sess.FilesTouched) < 8 {
+				seenFiles[base] = true
+				sess.FilesTouched = append(sess.FilesTouched, "📄 "+base)
+			}
 		}
 	case "Write", "Edit":
 		if path, ok := input["file_path"].(string); ok && path != "" {
-			sess.LastActivity = name + ": " + filepath.Base(path)
+			base := filepath.Base(path)
+			sess.LastActivity = name + ": " + base
+			stepSummary = "✏️ Write: " + base
+			if !seenFiles[base] && len(sess.FilesTouched) < 8 {
+				seenFiles[base] = true
+				sess.FilesTouched = append(sess.FilesTouched, "✏️ "+base)
+			}
+		}
+	}
+
+	if stepSummary != "" {
+		sess.Timeline = append(sess.Timeline, stepSummary)
+		if len(sess.Timeline) > 5 {
+			sess.Timeline = sess.Timeline[len(sess.Timeline)-5:]
 		}
 	}
 }

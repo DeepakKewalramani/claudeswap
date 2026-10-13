@@ -17,6 +17,14 @@ type Session struct {
 	MessageCount int       `json:"messageCount"`
 	LastActivity string    `json:"lastActivity"`
 	WebSources   []string  `json:"webSources"`
+
+	// Deep Live Intelligence & Telemetry
+	Model        string   `json:"model"`
+	Thinking     string   `json:"thinking"`
+	FilesTouched []string `json:"filesTouched"`
+	Timeline     []string `json:"timeline"`
+	TotalTokens  int64    `json:"totalTokens"`
+	TurnCount    int      `json:"turnCount"`
 }
 
 // ProjectGroup aggregates all Claude Code sessions for a specific project directory.

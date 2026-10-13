@@ -228,10 +228,10 @@ func (m SessionBrowserModel) View() string {
 	var sidebarWidth, centerWidth, inspectorWidth int
 	if showThreeColumns {
 		sidebarWidth = 24
-		inspectorWidth = 32
+		inspectorWidth = 42
 		centerWidth = totalWidth - sidebarWidth - inspectorWidth - 6
-		if centerWidth < 36 {
-			centerWidth = 36
+		if centerWidth < 34 {
+			centerWidth = 34
 		}
 	} else {
 		sidebarWidth = totalWidth * 30 / 100
@@ -362,45 +362,84 @@ func (m SessionBrowserModel) View() string {
 	}
 	centerBox := m.styles.Box.Width(centerWidth).Render(cb.String())
 
-	// 3. Render Right Inspector Panel (Activity & Web Sources)
+	// 3. Render Right Inspector Panel (Deep Intelligence & Telemetry)
 	var content string
 	if showThreeColumns {
 		var ib strings.Builder
-		ib.WriteString(m.styles.Subtitle.Render("🔍 Live Inspector") + "\n\n")
+		ib.WriteString(m.styles.Subtitle.Render("🔍 LIVE CLAUDE TELEMETRY") + "\n\n")
 
 		curSess := m.currentSession()
 		if curSess == nil {
-			ib.WriteString("Select a session to\ninspect details.\n")
+			ib.WriteString("Select a session to inspect\nreal-time execution state.\n")
 		} else {
-			ib.WriteString(fmt.Sprintf("🆔 %s\n", curSess.ID[:8]))
-			if curSess.GitBranch != "" {
-				ib.WriteString(fmt.Sprintf("🌿 %s\n", curSess.GitBranch))
+			// 1. Model, Turns & Token Efficiency
+			modelName := curSess.Model
+			if modelName == "" {
+				modelName = "claude-3-5-sonnet"
 			}
-			if curSess.ProjectCWD != "" {
-				cwdDisplay := curSess.ProjectCWD
-				if len(cwdDisplay) > inspectorWidth-4 {
-					cwdDisplay = "..." + cwdDisplay[len(cwdDisplay)-(inspectorWidth-7):]
+			turnStr := fmt.Sprintf("Turn #%d", curSess.TurnCount)
+			if curSess.TurnCount == 0 {
+				turnStr = "Active"
+			}
+			tokenStr := formatTokenCount(curSess.TotalTokens)
+
+			ib.WriteString(m.styles.Footer.Render("🧠 MODEL & TELEMETRY:") + "\n")
+			ib.WriteString(fmt.Sprintf(" %s • %s\n", m.styles.ReadyBadge.Render(modelName), turnStr))
+			if curSess.TotalTokens > 0 {
+				ib.WriteString(fmt.Sprintf(" %s\n", tokenStr))
+			}
+			ib.WriteString("\n")
+
+			// 2. Inner Monologue / Thinking
+			if curSess.Thinking != "" {
+				ib.WriteString(m.styles.Footer.Render("💭 INNER MONOLOGUE / THINKING:") + "\n")
+				th := curSess.Thinking
+				if len(th) > 180 {
+					th = th[:177] + "..."
 				}
-				ib.WriteString(fmt.Sprintf("📂 %s\n\n", cwdDisplay))
-			} else {
+				ib.WriteString(fmt.Sprintf(" “%s”\n\n", th))
+			}
+
+			// 3. Current Work / Where Claude is right now
+			ib.WriteString(m.styles.Footer.Render("⚡ CURRENT WORK:") + "\n")
+			act := curSess.LastActivity
+			if act == "" {
+				act = "Idle / Awaiting instructions"
+			}
+			if len(act) > inspectorWidth-4 {
+				act = act[:inspectorWidth-7] + "..."
+			}
+			ib.WriteString(" " + act + "\n\n")
+
+			// 4. Execution Journey (Breadcrumbs Timeline)
+			if len(curSess.Timeline) > 0 {
+				ib.WriteString(m.styles.Footer.Render("🛠 EXECUTION TRAIL (RECENT):") + "\n")
+				for _, step := range curSess.Timeline {
+					dispStep := step
+					if len(dispStep) > inspectorWidth-4 {
+						dispStep = dispStep[:inspectorWidth-7] + "..."
+					}
+					ib.WriteString(fmt.Sprintf("  %s\n", dispStep))
+				}
 				ib.WriteString("\n")
 			}
 
-			// Last Activity / Current Tool
-			ib.WriteString(m.styles.Footer.Render("⚡ ACTIVITY:") + "\n")
-			if curSess.LastActivity != "" {
-				act := curSess.LastActivity
-				if len(act) > inspectorWidth-2 {
-					act = act[:inspectorWidth-5] + "..."
+			// 5. Files Touched
+			if len(curSess.FilesTouched) > 0 {
+				ib.WriteString(m.styles.Footer.Render(fmt.Sprintf("📁 FILES TOUCHED (%d):", len(curSess.FilesTouched))) + "\n")
+				for _, f := range curSess.FilesTouched {
+					dispFile := f
+					if len(dispFile) > inspectorWidth-4 {
+						dispFile = dispFile[:inspectorWidth-7] + "..."
+					}
+					ib.WriteString(fmt.Sprintf("  %s\n", dispFile))
 				}
-				ib.WriteString(" " + act + "\n\n")
-			} else {
-				ib.WriteString(" Idle / Completed\n\n")
+				ib.WriteString("\n")
 			}
 
-			// Visited Web Source Links
-			ib.WriteString(m.styles.Footer.Render("🔗 WEB SOURCES:") + "\n")
+			// 6. Web Documentation & Sources
 			if len(curSess.WebSources) > 0 {
+				ib.WriteString(m.styles.Footer.Render("🔗 WEB SOURCES VISITED:") + "\n")
 				for _, src := range curSess.WebSources {
 					dispSrc := src
 					dispSrc = strings.TrimPrefix(dispSrc, "https://")
@@ -408,20 +447,24 @@ func (m SessionBrowserModel) View() string {
 					if len(dispSrc) > inspectorWidth-4 {
 						dispSrc = dispSrc[:inspectorWidth-7] + "..."
 					}
-					ib.WriteString(fmt.Sprintf(" • %s\n", dispSrc))
+					ib.WriteString(fmt.Sprintf("  • %s\n", dispSrc))
 				}
-			} else {
-				ib.WriteString(" None recorded\n")
+				ib.WriteString("\n")
 			}
 
-			// Topic Preview
-			if curSess.Title != "" {
-				ib.WriteString("\n" + m.styles.Footer.Render("💬 PROMPT:") + "\n")
-				p := curSess.Title
-				if len(p) > inspectorWidth-2 {
-					p = p[:inspectorWidth-5] + "..."
+			// 7. Git & Workspace Context
+			ib.WriteString(m.styles.Footer.Render("🌿 CONTEXT:") + "\n")
+			branch := curSess.GitBranch
+			if branch == "" {
+				branch = "main"
+			}
+			ib.WriteString(fmt.Sprintf("  Branch: %s\n", branch))
+			if curSess.ProjectCWD != "" {
+				cwd := curSess.ProjectCWD
+				if len(cwd) > inspectorWidth-10 {
+					cwd = "..." + cwd[len(cwd)-(inspectorWidth-13):]
 				}
-				ib.WriteString(" " + p + "\n")
+				ib.WriteString(fmt.Sprintf("  Path:   %s\n", cwd))
 			}
 		}
 
@@ -464,4 +507,14 @@ func formatRelativeTime(t time.Time) string {
 	default:
 		return t.Format("Jan 02")
 	}
+}
+
+func formatTokenCount(n int64) string {
+	if n >= 1_000_000 {
+		return fmt.Sprintf("%.1fM cached", float64(n)/1_000_000)
+	}
+	if n >= 1_000 {
+		return fmt.Sprintf("%.1fk cached", float64(n)/1_000)
+	}
+	return fmt.Sprintf("%d tokens", n)
 }
