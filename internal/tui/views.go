@@ -89,6 +89,8 @@ func (m Model) View() string {
 				stateBadge = m.styles.LoggedOutBadge.Render("[OFF • Isolated]")
 			}
 			line = fmt.Sprintf("%sMemory State:  %s  (m)", prefix, stateBadge)
+		case ActionSessionManager:
+			line = prefix + "Session Explorer (Sidebar) (w)"
 		case ActionAddProfile:
 			line = prefix + "Add Profile         (a)"
 		case ActionHandoff:
@@ -113,7 +115,7 @@ func (m Model) View() string {
 	}
 
 	b.WriteString("\n" + m.styles.Divider.Render(strings.Repeat("─", contentWidth)) + "\n")
-	footer := centerText("↑↓ Move • Enter Select • m Memory • a Add • h Handoff • q Quit", contentWidth)
+	footer := centerText("↑↓ Move • Enter Select • m Memory • w Sessions • a Add • h Handoff • q Quit", contentWidth)
 	b.WriteString(m.styles.Footer.Render(footer))
 
 	renderedBox := m.styles.Box.Render(b.String())

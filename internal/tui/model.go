@@ -10,17 +10,19 @@ import (
 type ActionItem string
 
 const (
-	ActionToggleMemory ActionItem = "Memory: ON/OFF"
-	ActionAddProfile   ActionItem = "Add Profile"
-	ActionHandoff      ActionItem = "Switch / Handoff"
-	ActionRemove       ActionItem = "Delete Profile"
-	ActionSettings     ActionItem = "Settings"
-	ActionDoctor       ActionItem = "Diagnostics"
-	ActionExit         ActionItem = "Exit"
+	ActionToggleMemory   ActionItem = "Memory: ON/OFF"
+	ActionSessionManager ActionItem = "Session Explorer (Sidebar)"
+	ActionAddProfile     ActionItem = "Add Profile"
+	ActionHandoff        ActionItem = "Switch / Handoff"
+	ActionRemove         ActionItem = "Delete Profile"
+	ActionSettings       ActionItem = "Settings"
+	ActionDoctor         ActionItem = "Diagnostics"
+	ActionExit           ActionItem = "Exit"
 )
 
 var defaultActions = []ActionItem{
 	ActionToggleMemory,
+	ActionSessionManager,
 	ActionAddProfile,
 	ActionHandoff,
 	ActionRemove,
@@ -136,6 +138,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case ActionToggleMemory:
 					m.SelectedResult = &ResultAction{Type: "toggle_memory"}
 					return m, tea.Quit
+				case ActionSessionManager:
+					m.SelectedResult = &ResultAction{Type: "session_manager"}
+					return m, tea.Quit
 				case ActionAddProfile:
 					m.SelectedResult = &ResultAction{Type: "add"}
 					return m, tea.Quit
@@ -163,6 +168,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "m":
 			m.SelectedResult = &ResultAction{Type: "toggle_memory"}
+			return m, tea.Quit
+
+		case "w":
+			m.SelectedResult = &ResultAction{Type: "session_manager"}
 			return m, tea.Quit
 
 		case "a":

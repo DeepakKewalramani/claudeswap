@@ -7,6 +7,7 @@ import (
 	"github.com/claudeswap/claudeswap/internal/claude"
 	"github.com/claudeswap/claudeswap/internal/config"
 	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/claudeswap/claudeswap/internal/session"
 	"github.com/claudeswap/claudeswap/internal/shortcut"
 	"github.com/claudeswap/claudeswap/internal/tui"
 
@@ -24,6 +25,7 @@ type AppContext struct {
 	Detector *claude.Detector
 	Launcher *claude.Launcher
 	Shortcut *shortcut.Manager
+	SessMgr  *session.Manager
 }
 
 // NewAppContext initializes the shared application dependencies.
@@ -47,6 +49,7 @@ func NewAppContext() (*AppContext, error) {
 	mgr.SetStatusChecker(detector.CheckAuthStatus)
 	launcher := claude.NewLauncher(detector, paths)
 	scMgr := shortcut.NewManager(paths)
+	sessMgr := session.NewManager(paths, store)
 
 	return &AppContext{
 		Paths:    paths,
@@ -56,6 +59,7 @@ func NewAppContext() (*AppContext, error) {
 		Detector: detector,
 		Launcher: launcher,
 		Shortcut: scMgr,
+		SessMgr:  sessMgr,
 	}, nil
 }
 
@@ -98,6 +102,7 @@ your credentials.`,
 		newDoctorCmd(app),
 		newSettingsCmd(app),
 		newSetDefaultCmd(app),
+		newSessionCmd(app),
 		newVersionCmd(),
 	)
 
@@ -182,6 +187,10 @@ func runTUI(app *AppContext) error {
 
 			case "add":
 				return runInteractiveAdd(app)
+
+			case "session_manager":
+				_ = runSessionBrowserTUI(app)
+				continue
 
 			case "doctor":
 				return runDoctorCheck(app)
