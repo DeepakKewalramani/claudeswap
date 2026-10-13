@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/claudeswap/claudeswap/internal/profile"
 )
 
@@ -12,7 +13,12 @@ func (m Model) View() string {
 		return ""
 	}
 
-	const contentWidth = 50
+	contentWidth := m.width - 6
+	if contentWidth < 46 {
+		contentWidth = 46
+	} else if contentWidth > 72 {
+		contentWidth = 72
+	}
 
 	var b strings.Builder
 
@@ -29,6 +35,11 @@ func (m Model) View() string {
 	if len(m.profiles) == 0 {
 		b.WriteString("  No profiles configured yet.\n\n")
 	} else {
+		nameColWidth := contentWidth - 18
+		if nameColWidth < 20 {
+			nameColWidth = 20
+		}
+
 		for i, p := range m.profiles {
 			isCursor := !m.inActions && m.cursor == i
 
@@ -38,14 +49,14 @@ func (m Model) View() string {
 			}
 
 			nameStr := p.Profile.Name
-			if len(nameStr) > 20 {
-				nameStr = nameStr[:17] + "..."
+			maxLen := nameColWidth - 3
+			if len(nameStr) > maxLen {
+				nameStr = nameStr[:maxLen-3] + "..."
 			}
 
 			statusBadge := formatStatusBadge(m.styles, p.Status)
 
-			// Format with fixed column spacing
-			leftPart := fmt.Sprintf("%s%-22s", prefix, nameStr)
+			leftPart := fmt.Sprintf("%s%-*s", prefix, nameColWidth, nameStr)
 			row := leftPart + statusBadge
 
 			if isCursor {
@@ -68,7 +79,32 @@ func (m Model) View() string {
 			prefix = "❯ "
 		}
 
-		line := prefix + string(action)
+		var line string
+		switch action {
+		case ActionToggleMemory:
+			var stateBadge string
+			if m.sharedMemory {
+				stateBadge = m.styles.ReadyBadge.Render("[ON  • Shared]")
+			} else {
+				stateBadge = m.styles.LoggedOutBadge.Render("[OFF • Isolated]")
+			}
+			line = fmt.Sprintf("%sMemory State:  %s  (m)", prefix, stateBadge)
+		case ActionAddProfile:
+			line = prefix + "Add Profile         (a)"
+		case ActionHandoff:
+			line = prefix + "Switch / Handoff    (h)"
+		case ActionRemove:
+			line = prefix + "Delete Profile      (r)"
+		case ActionSettings:
+			line = prefix + "Settings            (s)"
+		case ActionDoctor:
+			line = prefix + "Diagnostics         (d)"
+		case ActionExit:
+			line = prefix + "Exit                (q)"
+		default:
+			line = prefix + string(action)
+		}
+
 		if isCursor {
 			b.WriteString(m.styles.SelectedAction.Render(line) + "\n")
 		} else {
@@ -77,10 +113,21 @@ func (m Model) View() string {
 	}
 
 	b.WriteString("\n" + m.styles.Divider.Render(strings.Repeat("─", contentWidth)) + "\n")
-	footer := centerText("↑↓ Navigate   Enter Select   a Add   q Quit", contentWidth)
+	footer := centerText("↑↓ Move • Enter Select • m Memory • a Add • h Handoff • q Quit", contentWidth)
 	b.WriteString(m.styles.Footer.Render(footer))
 
-	return m.styles.Box.Render(b.String()) + "\n"
+	renderedBox := m.styles.Box.Render(b.String())
+	if m.width > 0 && m.height > 0 {
+		return lipgloss.Place(
+			m.width,
+			m.height,
+			lipgloss.Center,
+			lipgloss.Center,
+			renderedBox,
+		)
+	}
+
+	return renderedBox + "\n"
 }
 
 func formatStatusBadge(styles UIStyles, status profile.Status) string {

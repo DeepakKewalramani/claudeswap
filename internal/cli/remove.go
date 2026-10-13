@@ -107,3 +107,42 @@ func executeRemoval(app *AppContext, p *profile.Profile, removeData bool) error 
 	return nil
 }
 
+// PromptRemove provides an interactive confirmation dialog for removing a profile.
+func PromptRemove(app *AppContext, p *profile.Profile) error {
+	if p == nil {
+		return nil
+	}
+
+	fmt.Println("\nRemove Profile")
+	fmt.Println("--------------")
+	fmt.Printf("Profile:       %s\n", p.Name)
+	fmt.Printf("Shortcut:      %s\n", p.Shortcut)
+	fmt.Printf("Configuration: %s\n\n", p.ConfigDir)
+
+	fmt.Println("Choose:")
+	fmt.Println("  1. Remove profile metadata only (keep configuration files)")
+	fmt.Println("  2. Remove profile and delete local configuration files")
+	fmt.Println("  3. Cancel")
+	fmt.Print("\nEnter choice [1-3]: ")
+
+	reader := bufio.NewReader(os.Stdin)
+	choiceStr, _ := reader.ReadString('\n')
+	choice := strings.TrimSpace(choiceStr)
+
+	switch choice {
+	case "1":
+		return executeRemoval(app, p, false)
+	case "2":
+		fmt.Print("Are you sure you want to permanently delete local configuration? [y/N]: ")
+		confirmStr, _ := reader.ReadString('\n')
+		if strings.ToLower(strings.TrimSpace(confirmStr)) != "y" {
+			fmt.Println("Deletion cancelled.")
+			return nil
+		}
+		return executeRemoval(app, p, true)
+	default:
+		fmt.Println("Operation cancelled.")
+		return nil
+	}
+}
+

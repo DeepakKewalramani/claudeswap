@@ -55,6 +55,13 @@ func (m *Manager) SetStatusChecker(checker StatusChecker) {
 	m.statusCache = make(map[string]cachedStatus) // Invalidate cache when checker changes
 }
 
+// ClearStatusCache clears the internal status detection cache.
+func (m *Manager) ClearStatusCache() {
+	m.cacheMu.Lock()
+	defer m.cacheMu.Unlock()
+	m.statusCache = make(map[string]cachedStatus)
+}
+
 // Paths returns the paths instance used by the manager.
 func (m *Manager) Paths() *config.Paths {
 	return m.paths

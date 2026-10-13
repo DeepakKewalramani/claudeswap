@@ -69,10 +69,36 @@ func TestTUI_ModelNavigationAndSelection(t *testing.T) {
 		t.Errorf("Expected m.Quitting to be true")
 	}
 
-	// 7. Verify view output renders correctly
+	// 7. Test quick key 'm' for memory toggle
+	m = NewModel(profiles, false)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}})
+	m = updated.(Model)
+	if m.SelectedResult == nil || m.SelectedResult.Type != "toggle_memory" {
+		t.Errorf("Expected result 'toggle_memory', got %+v", m.SelectedResult)
+	}
+
+	// 8. Test quick key 'h' for handoff
 	m = NewModel(profiles)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'h'}})
+	m = updated.(Model)
+	if m.SelectedResult == nil || m.SelectedResult.Type != "handoff" {
+		t.Errorf("Expected result 'handoff', got %+v", m.SelectedResult)
+	}
+
+	// 9. Test quick key 'r' for remove
+	m = NewModel(profiles)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	m = updated.(Model)
+	if m.SelectedResult == nil || m.SelectedResult.Type != "remove" || m.SelectedResult.TargetProfile == nil || m.SelectedResult.TargetProfile.ID != "deepak" {
+		t.Errorf("Expected result 'remove' for deepak, got %+v", m.SelectedResult)
+	}
+
+	// 10. Verify responsive view rendering with dimensions
+	m = NewModel(profiles, true)
+	m.width = 80
+	m.height = 30
 	view := m.View()
-	if !strings.Contains(view, "ClaudeSwap") || !strings.Contains(view, "Deepak") || !strings.Contains(view, "Rohit Soni") {
-		t.Errorf("View missing key elements:\n%s", view)
+	if !strings.Contains(view, "ClaudeSwap") || !strings.Contains(view, "Deepak") || !strings.Contains(view, "Memory State") || !strings.Contains(view, "ON") {
+		t.Errorf("View missing key elements in responsive render:\n%s", view)
 	}
 }

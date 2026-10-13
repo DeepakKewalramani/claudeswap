@@ -10,14 +10,20 @@ import (
 type ActionItem string
 
 const (
-	ActionAddProfile ActionItem = "Add profile"
-	ActionSettings   ActionItem = "Settings"
-	ActionDoctor     ActionItem = "Diagnostics"
-	ActionExit       ActionItem = "Exit"
+	ActionToggleMemory ActionItem = "Memory: ON/OFF"
+	ActionAddProfile   ActionItem = "Add Profile"
+	ActionHandoff      ActionItem = "Switch / Handoff"
+	ActionRemove       ActionItem = "Delete Profile"
+	ActionSettings     ActionItem = "Settings"
+	ActionDoctor       ActionItem = "Diagnostics"
+	ActionExit         ActionItem = "Exit"
 )
 
 var defaultActions = []ActionItem{
+	ActionToggleMemory,
 	ActionAddProfile,
+	ActionHandoff,
+	ActionRemove,
 	ActionSettings,
 	ActionDoctor,
 	ActionExit,
@@ -38,24 +44,31 @@ type ProfileWithStatus struct {
 
 // Model represents the Bubble Tea state for the main ClaudeSwap interactive interface.
 type Model struct {
-	profiles      []ProfileWithStatus
-	actions       []ActionItem
-	cursor        int
-	inActions     bool
-	actionCursor  int
-	width         int
-	height        int
-	styles        UIStyles
-	Quitting      bool
+	profiles       []ProfileWithStatus
+	actions        []ActionItem
+	sharedMemory   bool
+	cursor         int
+	inActions      bool
+	actionCursor   int
+	width          int
+	height         int
+	styles         UIStyles
+	Quitting       bool
 	SelectedResult *ResultAction
 }
 
 // NewModel creates an initialized TUI Model.
-func NewModel(profiles []ProfileWithStatus) Model {
+func NewModel(profiles []ProfileWithStatus, sharedMemory ...bool) Model {
+	isShared := false
+	if len(sharedMemory) > 0 {
+		isShared = sharedMemory[0]
+	}
+
 	return Model{
-		profiles: profiles,
-		actions:  defaultActions,
-		styles:   DefaultStyles(),
+		profiles:     profiles,
+		actions:      defaultActions,
+		sharedMemory: isShared,
+		styles:       DefaultStyles(),
 	}
 }
 
@@ -120,8 +133,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.inActions {
 				action := m.actions[m.actionCursor]
 				switch action {
+				case ActionToggleMemory:
+					m.SelectedResult = &ResultAction{Type: "toggle_memory"}
+					return m, tea.Quit
 				case ActionAddProfile:
 					m.SelectedResult = &ResultAction{Type: "add"}
+					return m, tea.Quit
+				case ActionHandoff:
+					m.SelectedResult = &ResultAction{Type: "handoff"}
+					return m, tea.Quit
+				case ActionRemove:
+					var target *profile.Profile
+					if len(m.profiles) > 0 {
+						target = &m.profiles[m.cursor].Profile
+					}
+					m.SelectedResult = &ResultAction{Type: "remove", TargetProfile: target}
 					return m, tea.Quit
 				case ActionSettings:
 					m.SelectedResult = &ResultAction{Type: "settings"}
@@ -135,8 +161,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
+		case "m":
+			m.SelectedResult = &ResultAction{Type: "toggle_memory"}
+			return m, tea.Quit
+
 		case "a":
 			m.SelectedResult = &ResultAction{Type: "add"}
+			return m, tea.Quit
+
+		case "h":
+			m.SelectedResult = &ResultAction{Type: "handoff"}
+			return m, tea.Quit
+
+		case "r":
+			var target *profile.Profile
+			if len(m.profiles) > 0 {
+				target = &m.profiles[m.cursor].Profile
+			}
+			m.SelectedResult = &ResultAction{Type: "remove", TargetProfile: target}
 			return m, tea.Quit
 
 		case "d":

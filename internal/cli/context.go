@@ -11,15 +11,25 @@ import (
 )
 
 func newContextCmd(app *AppContext) *cobra.Command {
+	var onFlag bool
+	var offFlag bool
+
 	cmd := &cobra.Command{
-		Use:   "context [on|off|status]",
-		Short: "Manage shared memory and conversation context across profiles",
-		Long: `Shared Context allows multiple Claude Code profiles (e.g. Deepak and Rohit)
+		Use:     "context [on|off|status]",
+		Aliases: []string{"memory", "mem", "m"},
+		Short:   "Manage shared memory and conversation context across profiles",
+		Long: `Shared Memory & Context allows multiple Claude Code profiles (e.g. Deepak and Rohit)
 to share conversation sessions, project history, and command history while keeping
 their authentication credentials strictly separate.
 
 When an account hits rate limits, switching to another profile with shared context
-allows Claude Code to resume the exact same conversation seamlessly.`,
+allows Claude Code to resume the exact same conversation seamlessly.
+
+Short command examples:
+  claudeswap memory on
+  claudeswap memory off
+  claudeswap mem status
+  claudeswap m on`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, err := app.CfgStore.Load()
 			if err != nil {
@@ -27,11 +37,21 @@ allows Claude Code to resume the exact same conversation seamlessly.`,
 				os.Exit(ExitConfigError)
 			}
 
-			if len(args) == 0 || args[0] == "status" {
+			var action string
+			if onFlag {
+				action = "on"
+			} else if offFlag {
+				action = "off"
+			} else if len(args) > 0 {
+				action = strings.ToLower(args[0])
+			} else {
+				action = "status"
+			}
+
+			if action == "status" {
 				return showContextStatus(app, cfg.SharedContext)
 			}
 
-			action := strings.ToLower(args[0])
 			switch action {
 			case "on", "enable", "true":
 				cfg.SharedContext = true
@@ -77,6 +97,9 @@ allows Claude Code to resume the exact same conversation seamlessly.`,
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&onFlag, "on", false, "Enable shared memory across profiles")
+	cmd.Flags().BoolVar(&offFlag, "off", false, "Disable shared memory (isolate profiles)")
 
 	return cmd
 }

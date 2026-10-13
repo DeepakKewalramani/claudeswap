@@ -105,53 +105,92 @@ your credentials.`,
 }
 
 func runTUI(app *AppContext) error {
-	profiles, err := app.Manager.ListProfiles()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading profiles: %v\n", err)
-		return err
-	}
+	for {
+		cfg, _ := app.CfgStore.Load()
+		shared := cfg != nil && cfg.SharedContext
 
-	app.Manager.PreloadStatuses(profiles)
-
-	var items []tui.ProfileWithStatus
-	for _, p := range profiles {
-		status := app.Manager.GetStatus(&p)
-		items = append(items, tui.ProfileWithStatus{
-			Profile: p,
-			Status:  status,
-		})
-	}
-
-	m := tui.NewModel(items)
-	p := tea.NewProgram(m)
-	finalModel, err := p.Run()
-	if err != nil {
-		return err
-	}
-
-	// Process any selected action after TUI exits
-	if model, ok := finalModel.(tui.Model); ok && model.SelectedResult != nil {
-		res := model.SelectedResult
-		switch res.Type {
-		case "launch":
-			if res.TargetProfile != nil {
-				fmt.Printf("Launching %s...\n\n", res.TargetProfile.Name)
-				cfg, _ := app.CfgStore.Load()
-				shared := cfg != nil && cfg.SharedContext
-				code, err := app.Launcher.Launch(res.TargetProfile, nil, shared)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Error launching profile: %v\n", err)
-				}
-				os.Exit(code)
-			}
-		case "add":
-			return runInteractiveAdd(app)
-		case "doctor":
-			return runDoctorCheck(app)
-		case "settings":
-			return runSettingsView(app)
+		profiles, err := app.Manager.ListProfiles()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error loading profiles: %v\n", err)
+			return err
 		}
-	}
 
-	return nil
+		app.Manager.PreloadStatuses(profiles)
+
+		var items []tui.ProfileWithStatus
+		for _, p := range profiles {
+			status := app.Manager.GetStatus(&p)
+			items = append(items, tui.ProfileWithStatus{
+				Profile: p,
+				Status:  status,
+			})
+		}
+
+		m := tui.NewModel(items, shared)
+		p := tea.NewProgram(m)
+		finalModel, err := p.Run()
+		if err != nil {
+			return err
+		}
+
+		// Process any selected action after TUI exits
+		if model, ok := finalModel.(tui.Model); ok && model.SelectedResult != nil {
+			res := model.SelectedResult
+			switch res.Type {
+			case "toggle_memory":
+				cfg, _ := app.CfgStore.Load()
+				if cfg == nil {
+					cfg = &config.AppConfig{}
+				}
+				cfg.SharedContext = !cfg.SharedContext
+				_ = app.CfgStore.Save(cfg)
+				for _, pr := range profiles {
+					_ = claude.SyncSharedContext(app.Paths, pr.ConfigDir, cfg.SharedContext)
+				}
+				app.Manager.ClearStatusCache()
+				continue
+
+			case "launch":
+				if res.TargetProfile != nil {
+					fmt.Printf("Launching %s...\n\n", res.TargetProfile.Name)
+					code, err := app.Launcher.Launch(res.TargetProfile, nil, shared)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error launching profile: %v\n", err)
+					}
+					os.Exit(code)
+				}
+				return nil
+
+			case "handoff":
+				nextProfile, proceed := PromptHandoffMenu(app, nil)
+				if proceed && nextProfile != nil {
+					fmt.Printf("\n✓ Resuming session under profile %q (%s)...\n", nextProfile.Name, nextProfile.ID)
+					code, err := app.Launcher.Launch(nextProfile, []string{"--resume"}, true)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Error launching profile: %v\n", err)
+					}
+					os.Exit(code)
+				}
+				return nil
+
+			case "remove":
+				target := res.TargetProfile
+				if target != nil {
+					return PromptRemove(app, target)
+				}
+				return nil
+
+			case "add":
+				return runInteractiveAdd(app)
+
+			case "doctor":
+				return runDoctorCheck(app)
+
+			case "settings":
+				return runSettingsView(app)
+			}
+		}
+
+		return nil
+	}
 }
