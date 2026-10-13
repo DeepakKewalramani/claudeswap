@@ -12,6 +12,7 @@ type ActionItem string
 const (
 	ActionToggleMemory   ActionItem = "Memory: ON/OFF"
 	ActionSessionManager ActionItem = "Session Explorer (Sidebar)"
+	ActionSupervisor     ActionItem = "Multi-Session Matrix (x)"
 	ActionAddProfile     ActionItem = "Add Profile"
 	ActionHandoff        ActionItem = "Switch / Handoff"
 	ActionRemove         ActionItem = "Delete Profile"
@@ -23,6 +24,7 @@ const (
 var defaultActions = []ActionItem{
 	ActionToggleMemory,
 	ActionSessionManager,
+	ActionSupervisor,
 	ActionAddProfile,
 	ActionHandoff,
 	ActionRemove,
@@ -141,6 +143,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				case ActionSessionManager:
 					m.SelectedResult = &ResultAction{Type: "session_manager"}
 					return m, tea.Quit
+				case ActionSupervisor:
+					m.SelectedResult = &ResultAction{Type: "matrix"}
+					return m, tea.Quit
 				case ActionAddProfile:
 					m.SelectedResult = &ResultAction{Type: "add"}
 					return m, tea.Quit
@@ -172,6 +177,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "w":
 			m.SelectedResult = &ResultAction{Type: "session_manager"}
+			return m, tea.Quit
+
+		case "x":
+			m.SelectedResult = &ResultAction{Type: "matrix"}
 			return m, tea.Quit
 
 		case "a":

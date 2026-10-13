@@ -91,6 +91,8 @@ func (m Model) View() string {
 			line = fmt.Sprintf("%sMemory State:  %s  (m)", prefix, stateBadge)
 		case ActionSessionManager:
 			line = prefix + "Session Explorer (Sidebar) (w)"
+		case ActionSupervisor:
+			line = prefix + "Multi-Session Matrix (20)  (x)"
 		case ActionAddProfile:
 			line = prefix + "Add Profile         (a)"
 		case ActionHandoff:
@@ -115,7 +117,7 @@ func (m Model) View() string {
 	}
 
 	b.WriteString("\n" + m.styles.Divider.Render(strings.Repeat("─", contentWidth)) + "\n")
-	footer := centerText("↑↓ Move • Enter Select • m Memory • w Sessions • a Add • h Handoff • q Quit", contentWidth)
+	footer := centerText("↑↓ Move • Enter Select • m Memory • w Sessions • x Matrix • q Quit", contentWidth)
 	b.WriteString(m.styles.Footer.Render(footer))
 
 	renderedBox := m.styles.Box.Render(b.String())

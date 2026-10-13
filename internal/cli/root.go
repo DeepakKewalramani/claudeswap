@@ -9,6 +9,7 @@ import (
 	"github.com/claudeswap/claudeswap/internal/profile"
 	"github.com/claudeswap/claudeswap/internal/session"
 	"github.com/claudeswap/claudeswap/internal/shortcut"
+	"github.com/claudeswap/claudeswap/internal/supervisor"
 	"github.com/claudeswap/claudeswap/internal/tui"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -23,9 +24,10 @@ type AppContext struct {
 	Store    *profile.Store
 	Manager  *profile.Manager
 	Detector *claude.Detector
-	Launcher *claude.Launcher
-	Shortcut *shortcut.Manager
-	SessMgr  *session.Manager
+	Launcher   *claude.Launcher
+	Shortcut   *shortcut.Manager
+	SessMgr    *session.Manager
+	Supervisor *supervisor.Supervisor
 }
 
 // NewAppContext initializes the shared application dependencies.
@@ -50,16 +52,18 @@ func NewAppContext() (*AppContext, error) {
 	launcher := claude.NewLauncher(detector, paths)
 	scMgr := shortcut.NewManager(paths)
 	sessMgr := session.NewManager(paths, store)
+	sup := supervisor.NewSupervisor(paths, detector, sessMgr)
 
 	return &AppContext{
-		Paths:    paths,
-		CfgStore: cfgStore,
-		Store:    store,
-		Manager:  mgr,
-		Detector: detector,
-		Launcher: launcher,
-		Shortcut: scMgr,
-		SessMgr:  sessMgr,
+		Paths:      paths,
+		CfgStore:   cfgStore,
+		Store:      store,
+		Manager:    mgr,
+		Detector:   detector,
+		Launcher:   launcher,
+		Shortcut:   scMgr,
+		SessMgr:    sessMgr,
+		Supervisor: sup,
 	}, nil
 }
 
@@ -103,6 +107,7 @@ your credentials.`,
 		newSettingsCmd(app),
 		newSetDefaultCmd(app),
 		newSessionCmd(app),
+		newMatrixCmd(app),
 		newVersionCmd(),
 	)
 
@@ -190,6 +195,10 @@ func runTUI(app *AppContext) error {
 					targetProf = &profiles[0]
 				}
 				_ = runSessionBrowserTUIWithProfile(app, targetProf)
+				continue
+
+			case "matrix":
+				_ = runSupervisorTUI(app)
 				continue
 
 			case "doctor":
