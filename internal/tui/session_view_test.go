@@ -159,7 +159,7 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 	m.width = 110
 	m.height = 30
 	view := m.View()
-	if !strings.Contains(view, "Folders") || !strings.Contains(view, "ritik-test") || !strings.Contains(view, "LIVE CLAUDE TELEMETRY") {
+	if !strings.Contains(view, "Folders") || !strings.Contains(view, "ritik-test") || !strings.Contains(strings.ToLower(view), "telemetry") {
 		t.Errorf("View missing key 3-column elements:\n%s", view)
 	}
 	if !strings.Contains(view, "Tabs:") || !strings.Contains(view, "autopredict") {
