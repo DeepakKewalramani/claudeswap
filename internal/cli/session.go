@@ -5,6 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/claudeswap/claudeswap/internal/claude"
 	"github.com/claudeswap/claudeswap/internal/profile"
 	"github.com/claudeswap/claudeswap/internal/session"
 	"github.com/claudeswap/claudeswap/internal/tui"
@@ -122,6 +123,19 @@ func newSessionDeleteCmd(app *AppContext) *cobra.Command {
 }
 
 func runSessionBrowserTUI(app *AppContext) error {
+	cfg, _ := app.CfgStore.Load()
+	var defaultProf string
+	if cfg != nil {
+		defaultProf = cfg.DefaultProfile
+	}
+	prof, err := resolveTargetProfile(app, defaultProf)
+	if err != nil {
+		return err
+	}
+	return runSessionBrowserTUIWithProfile(app, prof)
+}
+
+func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) error {
 	for {
 		groups, err := app.SessMgr.ScanProjects()
 		if err != nil {
@@ -129,7 +143,10 @@ func runSessionBrowserTUI(app *AppContext) error {
 			return err
 		}
 
-		model := tui.NewSessionBrowserModel(groups)
+		cfg, _ := app.CfgStore.Load()
+		shared := cfg != nil && cfg.SharedContext
+
+		model := tui.NewSessionBrowserModel(groups, prof, shared)
 		p := tea.NewProgram(model)
 		finalModel, err := p.Run()
 		if err != nil {
@@ -144,19 +161,31 @@ func runSessionBrowserTUI(app *AppContext) error {
 		res := resModel.Result
 		switch res.Action {
 		case "resume":
-			cfg, _ := app.CfgStore.Load()
-			var defaultProf string
-			if cfg != nil {
-				defaultProf = cfg.DefaultProfile
-			}
-			prof, err := resolveTargetProfile(app, defaultProf)
-			if err != nil {
-				return err
-			}
 			return resumeSessionWithProfile(app, prof, res.Session, res.Group)
 
+		case "new":
+			return launchNewSessionWithProfile(app, prof, res.Group)
+
+		case "switch_profile":
+			nextProf, proceed := PromptHandoffMenu(app, prof)
+			if proceed && nextProf != nil {
+				prof = nextProf
+			}
+			continue
+
+		case "toggle_memory":
+			if cfg != nil {
+				cfg.SharedContext = !cfg.SharedContext
+				_ = app.CfgStore.Save(cfg)
+				profiles, _ := app.Manager.ListProfiles()
+				for _, pr := range profiles {
+					_ = claude.SyncSharedContext(app.Paths, pr.ConfigDir, cfg.SharedContext)
+				}
+			}
+			continue
+
 		case "handoff":
-			nextProf, proceed := PromptHandoffMenu(app, nil)
+			nextProf, proceed := PromptHandoffMenu(app, prof)
 			if proceed && nextProf != nil {
 				return resumeSessionWithProfile(app, nextProf, res.Session, res.Group)
 			}
@@ -172,6 +201,36 @@ func runSessionBrowserTUI(app *AppContext) error {
 
 		return nil
 	}
+}
+
+func launchNewSessionWithProfile(app *AppContext, p *profile.Profile, group *session.ProjectGroup) error {
+	folderName := "Current Folder"
+	cwd := ""
+	if group != nil {
+		folderName = group.Name
+		cwd = group.CWD
+	}
+	if cwd == "" {
+		cwd, _ = os.Getwd()
+	}
+
+	fmt.Printf("\n✓ Starting new Claude Code session in %s\n", folderName)
+	fmt.Printf("✓ Profile: %s (%s)\n", p.Name, p.Shortcut)
+	fmt.Printf("✓ Directory: %s\n\n", cwd)
+
+	if info, err := os.Stat(cwd); err == nil && info.IsDir() {
+		_ = os.Chdir(cwd)
+	}
+
+	cfg, _ := app.CfgStore.Load()
+	shared := cfg != nil && cfg.SharedContext
+
+	code, err := app.Launcher.Launch(p, nil, shared)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "✗ Error launching Claude: %v\n", err)
+	}
+	os.Exit(code)
+	return nil
 }
 
 func printSessionsList(app *AppContext) error {

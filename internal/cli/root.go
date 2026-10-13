@@ -157,12 +157,8 @@ func runTUI(app *AppContext) error {
 
 			case "launch":
 				if res.TargetProfile != nil {
-					fmt.Printf("Launching %s...\n\n", res.TargetProfile.Name)
-					code, err := app.Launcher.Launch(res.TargetProfile, nil, shared)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Error launching profile: %v\n", err)
-					}
-					os.Exit(code)
+					_ = runSessionBrowserTUIWithProfile(app, res.TargetProfile)
+					continue
 				}
 				return nil
 
@@ -189,7 +185,11 @@ func runTUI(app *AppContext) error {
 				return runInteractiveAdd(app)
 
 			case "session_manager":
-				_ = runSessionBrowserTUI(app)
+				var targetProf *profile.Profile
+				if len(profiles) > 0 {
+					targetProf = &profiles[0]
+				}
+				_ = runSessionBrowserTUIWithProfile(app, targetProf)
 				continue
 
 			case "doctor":

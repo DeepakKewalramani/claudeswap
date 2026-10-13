@@ -6,22 +6,30 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/claudeswap/claudeswap/internal/profile"
 	"github.com/claudeswap/claudeswap/internal/session"
 )
 
 func TestSessionBrowser_NavigationAndActions(t *testing.T) {
+	testProf := &profile.Profile{
+		ID:   "prof-1",
+		Name: "ritik-test",
+	}
+
 	groups := []session.ProjectGroup{
 		{
 			Name: "autopredict",
 			CWD:  "/Users/test/autopredict",
 			Sessions: []session.Session{
 				{
-					ID:          "11112222-3333-4444-5555-666677778888",
-					ProjectName: "autopredict",
-					ProjectCWD:  "/Users/test/autopredict",
-					GitBranch:   "main",
-					Title:       "Fix DNS issue",
-					UpdatedAt:   time.Now().Add(-10 * time.Minute),
+					ID:           "11112222-3333-4444-5555-666677778888",
+					ProjectName:  "autopredict",
+					ProjectCWD:   "/Users/test/autopredict",
+					GitBranch:    "main",
+					Title:        "Fix DNS issue",
+					LastActivity: "WebSearch: Sarvam AI speech",
+					WebSources:   []string{"https://docs.sarvam.ai/pricing"},
+					UpdatedAt:    time.Now().Add(-10 * time.Minute),
 				},
 				{
 					ID:          "aaaa2222-3333-4444-5555-666677778888",
@@ -49,7 +57,7 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 		},
 	}
 
-	m := NewSessionBrowserModel(groups)
+	m := NewSessionBrowserModel(groups, testProf, true)
 
 	// 1. Initial state: focus on sidebar
 	if !m.focusSidebar || m.activeGroupIdx != 0 {
@@ -94,17 +102,24 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 		t.Errorf("Unexpected resumed session ID: %s", m.Result.Session.ID)
 	}
 
-	// 7. Test 's' for handoff
-	m = NewSessionBrowserModel(groups)
-	m.focusSidebar = false
-	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+	// 7. Test 'n' for new session
+	m = NewSessionBrowserModel(groups, testProf, true)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
 	m = updated.(SessionBrowserModel)
-	if m.Result == nil || m.Result.Action != "handoff" {
-		t.Fatalf("Expected result action 'handoff', got %+v", m.Result)
+	if m.Result == nil || m.Result.Action != "new" {
+		t.Fatalf("Expected result action 'new', got %+v", m.Result)
 	}
 
-	// 8. Test 'd' delete confirmation
-	m = NewSessionBrowserModel(groups)
+	// 8. Test 's' for switch profile
+	m = NewSessionBrowserModel(groups, testProf, true)
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+	m = updated.(SessionBrowserModel)
+	if m.Result == nil || m.Result.Action != "switch_profile" {
+		t.Fatalf("Expected result action 'switch_profile', got %+v", m.Result)
+	}
+
+	// 9. Test 'd' delete confirmation
+	m = NewSessionBrowserModel(groups, testProf, true)
 	m.focusSidebar = false
 	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}})
 	m = updated.(SessionBrowserModel)
@@ -119,12 +134,16 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 		t.Fatalf("Expected result action 'delete', got %+v", m.Result)
 	}
 
-	// 9. Verify responsive two-column view
-	m = NewSessionBrowserModel(groups)
-	m.width = 90
+	// 10. Verify 3-column wide view with live inspector and web sources
+	m = NewSessionBrowserModel(groups, testProf, true)
+	m.focusSidebar = false
+	m.width = 110
 	m.height = 30
 	view := m.View()
-	if !strings.Contains(view, "Folders") || !strings.Contains(view, "autopredict") || !strings.Contains(view, "Fix DNS issue") {
-		t.Errorf("View missing key sidebar elements:\n%s", view)
+	if !strings.Contains(view, "Folders") || !strings.Contains(view, "ritik-test") || !strings.Contains(view, "Live Inspector") {
+		t.Errorf("View missing key 3-column elements:\n%s", view)
+	}
+	if !strings.Contains(view, "Sarvam AI") || !strings.Contains(view, "docs.sarvam.ai/pricing") {
+		t.Errorf("View missing live activity and web sources inspector elements:\n%s", view)
 	}
 }

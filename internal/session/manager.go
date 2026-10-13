@@ -223,45 +223,107 @@ func parseSessionHeader(sessionID, filePath string, fi os.FileInfo) Session {
 	defer f.Close()
 
 	scanner := bufio.NewScanner(f)
-	lineCount := 0
+	buf := make([]byte, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
 
-	for scanner.Scan() && lineCount < 40 {
+	lineCount := 0
+	seenSources := make(map[string]bool)
+
+	for scanner.Scan() && lineCount < 100 {
 		lineCount++
 		line := scanner.Bytes()
 		if len(line) == 0 {
 			continue
 		}
 
-		var entry struct {
-			Type      string `json:"type"`
-			CWD       string `json:"cwd"`
-			GitBranch string `json:"gitBranch"`
-			Timestamp string `json:"timestamp"`
-			Message   any    `json:"message"`
-		}
-
-		if err := json.Unmarshal(line, &entry); err != nil {
+		var raw map[string]any
+		if err := json.Unmarshal(line, &raw); err != nil {
 			continue
 		}
 
-		if entry.CWD != "" && sess.ProjectCWD == "" {
-			sess.ProjectCWD = entry.CWD
-			sess.ProjectName = filepath.Base(entry.CWD)
+		if cwd, ok := raw["cwd"].(string); ok && cwd != "" && sess.ProjectCWD == "" {
+			sess.ProjectCWD = cwd
+			sess.ProjectName = filepath.Base(cwd)
 		}
-		if entry.GitBranch != "" && sess.GitBranch == "" {
-			sess.GitBranch = entry.GitBranch
+		if branch, ok := raw["gitBranch"].(string); ok && branch != "" && sess.GitBranch == "" {
+			sess.GitBranch = branch
 		}
 
-		if entry.Type == "user" && entry.Message != nil {
-			title := extractMessageText(entry.Message)
-			if title != "" {
-				sess.Title = cleanTitle(title)
-				break
+		// Title extraction from first user prompt
+		entryType, _ := raw["type"].(string)
+		if entryType == "user" && sess.Title == "Session "+truncateID(sessionID) {
+			if msg := raw["message"]; msg != nil {
+				title := extractMessageText(msg)
+				if title != "" {
+					sess.Title = cleanTitle(title)
+				}
 			}
 		}
+
+		// Tool & Activity extraction
+		extractToolActivity(raw, &sess, seenSources)
 	}
 
 	return sess
+}
+
+func extractToolActivity(raw map[string]any, sess *Session, seenSources map[string]bool) {
+	entryType, _ := raw["type"].(string)
+	if entryType == "tool_use" {
+		recordTool(raw, sess, seenSources)
+		return
+	}
+
+	if msg, ok := raw["message"].(map[string]any); ok {
+		if content, ok := msg["content"].([]any); ok {
+			for _, item := range content {
+				if itemMap, ok := item.(map[string]any); ok {
+					if itType, _ := itemMap["type"].(string); itType == "tool_use" {
+						recordTool(itemMap, sess, seenSources)
+					}
+				}
+			}
+		}
+	}
+}
+
+func recordTool(toolMap map[string]any, sess *Session, seenSources map[string]bool) {
+	name, _ := toolMap["name"].(string)
+	input, _ := toolMap["input"].(map[string]any)
+	if input == nil {
+		return
+	}
+
+	switch name {
+	case "WebSearch":
+		if q, ok := input["query"].(string); ok && q != "" {
+			sess.LastActivity = "WebSearch: " + cleanTitle(q)
+		}
+	case "WebFetch":
+		if u, ok := input["url"].(string); ok && u != "" {
+			sess.LastActivity = "WebFetch: " + u
+			if !seenSources[u] && len(sess.WebSources) < 6 {
+				seenSources[u] = true
+				sess.WebSources = append(sess.WebSources, u)
+			}
+		}
+	case "Bash":
+		if cmd, ok := input["command"].(string); ok && cmd != "" {
+			trimmed := strings.TrimSpace(cmd)
+			if len(trimmed) > 40 {
+				trimmed = trimmed[:37] + "..."
+			}
+			sess.LastActivity = "Bash: " + trimmed
+		}
+	case "Read":
+		if path, ok := input["file_path"].(string); ok && path != "" {
+			sess.LastActivity = "Read: " + filepath.Base(path)
+		}
+	case "Write", "Edit":
+		if path, ok := input["file_path"].(string); ok && path != "" {
+			sess.LastActivity = name + ": " + filepath.Base(path)
+		}
+	}
 }
 
 func extractMessageText(raw any) string {

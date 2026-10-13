@@ -15,6 +15,8 @@ type Session struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 	SizeBytes    int64     `json:"sizeBytes"`
 	MessageCount int       `json:"messageCount"`
+	LastActivity string    `json:"lastActivity"`
+	WebSources   []string  `json:"webSources"`
 }
 
 // ProjectGroup aggregates all Claude Code sessions for a specific project directory.
