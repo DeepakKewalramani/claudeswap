@@ -1,5 +1,5 @@
 BINARY_NAME=claudeswap
-VERSION=1.0.0
+VERSION=1.1.0
 BUILD_DIR=dist
 MAIN_PACKAGE=./cmd/claudeswap
 

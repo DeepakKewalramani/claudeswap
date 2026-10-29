@@ -9,6 +9,7 @@ import (
 	"github.com/claudeswap/claudeswap/internal/profile"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func newRemoveCmd(app *AppContext) *cobra.Command {
@@ -53,21 +54,14 @@ You can choose whether to keep or delete the local isolated configuration direct
 				return executeRemoval(app, p, true)
 			}
 
-			fmt.Println("Choose:")
-			fmt.Println("  1. Remove profile metadata only (keep configuration files)")
-			fmt.Println("  2. Remove profile and local configuration files")
-			fmt.Println("  3. Cancel")
-			fmt.Print("\nEnter choice [1-3]: ")
-
-			reader := bufio.NewReader(os.Stdin)
-			choiceStr, _ := reader.ReadString('\n')
-			choice := strings.TrimSpace(choiceStr)
+			choice := promptRemovalChoice()
 
 			switch choice {
 			case "1":
 				return executeRemoval(app, p, false)
 			case "2":
 				fmt.Print("Are you sure you want to permanently delete local configuration? [y/N]: ")
+				reader := bufio.NewReader(os.Stdin)
 				confirmStr, _ := reader.ReadString('\n')
 				if strings.ToLower(strings.TrimSpace(confirmStr)) != "y" {
 					fmt.Println("Deletion cancelled.")
@@ -119,21 +113,13 @@ func PromptRemove(app *AppContext, p *profile.Profile) error {
 	fmt.Printf("Shortcut:      %s\n", p.Shortcut)
 	fmt.Printf("Configuration: %s\n\n", p.ConfigDir)
 
-	fmt.Println("Choose:")
-	fmt.Println("  1. Remove profile metadata only (keep configuration files)")
-	fmt.Println("  2. Remove profile and delete local configuration files")
-	fmt.Println("  3. Cancel")
-	fmt.Print("\nEnter choice [1-3]: ")
-
-	reader := bufio.NewReader(os.Stdin)
-	choiceStr, _ := reader.ReadString('\n')
-	choice := strings.TrimSpace(choiceStr)
-
+	choice := promptRemovalChoice()
 	switch choice {
 	case "1":
 		return executeRemoval(app, p, false)
 	case "2":
 		fmt.Print("Are you sure you want to permanently delete local configuration? [y/N]: ")
+		reader := bufio.NewReader(os.Stdin)
 		confirmStr, _ := reader.ReadString('\n')
 		if strings.ToLower(strings.TrimSpace(confirmStr)) != "y" {
 			fmt.Println("Deletion cancelled.")
@@ -143,6 +129,48 @@ func PromptRemove(app *AppContext, p *profile.Profile) error {
 	default:
 		fmt.Println("Operation cancelled.")
 		return nil
+	}
+}
+
+func promptRemovalChoice() string {
+	fmt.Println("Choose an action:")
+	fmt.Println("  [1] Keep configuration files (remove profile metadata only)")
+	fmt.Println("  [2] Remove profile and delete local configuration files")
+	fmt.Println("  [3/q] Cancel")
+	fmt.Print("\nSelect option (1, 2, or 3): ")
+
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		reader := bufio.NewReader(os.Stdin)
+		s, _ := reader.ReadString('\n')
+		return strings.TrimSpace(s)
+	}
+
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		reader := bufio.NewReader(os.Stdin)
+		s, _ := reader.ReadString('\n')
+		return strings.TrimSpace(s)
+	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+
+	var buf [1]byte
+	for {
+		n, err := os.Stdin.Read(buf[:])
+		if err != nil || n == 0 {
+			return "3"
+		}
+		ch := buf[0]
+		switch ch {
+		case '1':
+			fmt.Println("1")
+			return "1"
+		case '2':
+			fmt.Println("2")
+			return "2"
+		case '3', 'q', 'Q', 27, 3: // 3, q, Esc, Ctrl+C
+			fmt.Println("Cancel")
+			return "3"
+		}
 	}
 }
 

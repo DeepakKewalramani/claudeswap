@@ -107,6 +107,7 @@ your credentials.`,
 		newSettingsCmd(app),
 		newSetDefaultCmd(app),
 		newSessionCmd(app),
+		newAgentsCmd(app),
 		newMatrixCmd(app),
 		newVersionCmd(),
 	)

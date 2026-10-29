@@ -25,6 +25,13 @@ type Session struct {
 	Timeline     []string `json:"timeline"`
 	TotalTokens  int64    `json:"totalTokens"`
 	TurnCount    int      `json:"turnCount"`
+
+	// Live Claude Desktop & Background State
+	IsLive     bool   `json:"isLive"`
+	LiveStatus string `json:"liveStatus"` // "waiting", "idle", "active"
+	WaitingFor string `json:"waitingFor"` // "permission prompt"
+	Entrypoint string `json:"entrypoint"` // "claude-desktop", "cli"
+	PID        int    `json:"pid"`
 }
 
 // ProjectGroup aggregates all Claude Code sessions for a specific project directory.

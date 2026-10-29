@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 $Repo = "claudeswap/claudeswap"
-$Version = "1.0.0"
+$Version = "1.1.0"
 
 Write-Host "ClaudeSwap Windows Installer" -ForegroundColor Cyan
 Write-Host "============================"

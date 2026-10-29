@@ -1,14 +1,14 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/claudeswap/claudeswap/internal/claude"
 	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/claudeswap/claudeswap/internal/tui"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -112,18 +112,9 @@ func PromptHandoffMenu(app *AppContext, currentProfile *profile.Profile) (*profi
 		return nil, false
 	}
 
-	fmt.Println()
-	fmt.Println("────────────────────────────────────────────────────────────")
-	if currentProfile != nil {
-		fmt.Printf("Claude Code session ended for %s.\n\n", currentProfile.Name)
-		fmt.Println("Reached account limits or want to continue with another account?")
-	} else {
-		fmt.Println("Select profile to hand off and resume active conversation:")
-	}
-	fmt.Println()
-
 	app.Manager.PreloadStatuses(candidates)
-	for i, c := range candidates {
+	var items []handoffItem
+	for _, c := range candidates {
 		status := app.Manager.GetStatus(&c)
 		var statusBadge string
 		switch status {
@@ -136,36 +127,107 @@ func PromptHandoffMenu(app *AppContext, currentProfile *profile.Profile) (*profi
 		default:
 			statusBadge = "? Unknown"
 		}
-		fmt.Printf("  [%d] %-20s (%s)  %s\n", i+1, c.Name, c.Shortcut, statusBadge)
+		items = append(items, handoffItem{
+			profile: c,
+			badge:   statusBadge,
+		})
 	}
-	fmt.Println("  [q] Exit to shell")
-	fmt.Println()
-	fmt.Print("Select account [1-", len(candidates), ", or Enter/q to exit]: ")
 
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
+	m := handoffPickerModel{
+		candidates:     items,
+		currentProfile: currentProfile,
+		styles:         tui.DefaultStyles(),
+	}
+
+	p := tea.NewProgram(m)
+	finalModel, err := p.Run()
 	if err != nil {
 		return nil, false
 	}
 
-	choice := strings.TrimSpace(input)
-	if choice == "" || strings.EqualFold(choice, "q") || strings.EqualFold(choice, "exit") {
-		return nil, false
-	}
-
-	// Check if user entered a number
-	if num, err := strconv.Atoi(choice); err == nil && num >= 1 && num <= len(candidates) {
-		selected := candidates[num-1]
-		return &selected, true
-	}
-
-	// Check if user entered a profile name or shortcut directly
-	for _, c := range candidates {
-		if strings.EqualFold(c.ID, choice) || strings.EqualFold(c.Name, choice) || strings.EqualFold(c.Shortcut, choice) {
-			selected := c
-			return &selected, true
-		}
+	if picker, ok := finalModel.(handoffPickerModel); ok && picker.selected != nil {
+		return picker.selected, true
 	}
 
 	return nil, false
+}
+
+type handoffItem struct {
+	profile profile.Profile
+	badge   string
+}
+
+type handoffPickerModel struct {
+	candidates     []handoffItem
+	cursor         int
+	selected       *profile.Profile
+	currentProfile *profile.Profile
+	styles         tui.UIStyles
+}
+
+func (m handoffPickerModel) Init() tea.Cmd { return nil }
+
+func (m handoffPickerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q", "esc":
+			return m, tea.Quit
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(m.candidates)-1 {
+				m.cursor++
+			}
+		case "enter":
+			if len(m.candidates) > 0 {
+				m.selected = &m.candidates[m.cursor].profile
+			}
+			return m, tea.Quit
+		default:
+			if len(msg.Runes) == 1 && msg.Runes[0] >= '1' && msg.Runes[0] <= '9' {
+				idx := int(msg.Runes[0] - '1')
+				if idx < len(m.candidates) {
+					m.selected = &m.candidates[idx].profile
+					return m, tea.Quit
+				}
+			}
+			for _, item := range m.candidates {
+				if strings.EqualFold(item.profile.Shortcut, msg.String()) {
+					m.selected = &item.profile
+					return m, tea.Quit
+				}
+			}
+		}
+	}
+	return m, nil
+}
+
+func (m handoffPickerModel) View() string {
+	var b strings.Builder
+	b.WriteString("\n")
+	if m.currentProfile != nil {
+		b.WriteString(m.styles.WarnBadge.Render(fmt.Sprintf(" Claude Code session ended for %s ", m.currentProfile.Name)) + "\n")
+		b.WriteString(m.styles.TextMuted.Render("Select profile to resume active conversation:") + "\n\n")
+	} else {
+		b.WriteString(m.styles.Title.Render(" Select profile to resume active conversation: ") + "\n\n")
+	}
+
+	for i, c := range m.candidates {
+		prefix := "  "
+		if i == m.cursor {
+			prefix = "❯ "
+		}
+		itemStr := fmt.Sprintf("[%d] %-18s (%s)  %s", i+1, c.profile.Name, c.profile.Shortcut, c.badge)
+		if i == m.cursor {
+			b.WriteString(m.styles.ActiveItem.Render(prefix+itemStr) + "\n")
+		} else {
+			b.WriteString(prefix + itemStr + "\n")
+		}
+	}
+
+	b.WriteString("\n" + m.styles.TextMuted.Render("Press 1-9 or Enter to select • q to exit") + "\n")
+	return b.String()
 }

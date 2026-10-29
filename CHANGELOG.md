@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-10-29
+
+### Added
+- **Multi-Session Supervisor Matrix:**
+  - `claudeswap matrix`: Mission control dashboard to supervise 20+ concurrent Claude Code sessions.
+  - Real-time status cards, activity gauges, active process detection, and instant session jump.
+- **Folder-Wise Session Explorer & Deep Telemetry HUD:**
+  - `claudeswap sessions [list|resume|delete]`: Full-screen browser with left folder navigation and interactive session cards.
+  - Multi-session tab strip (1–9 keys) for instant tab switching.
+  - Deep telemetry HUD displaying live thinking state, model specs, token micro-gauges, and files touched.
+  - Auto-forking (`--fork-session`) support on running background instances to prevent process lock contention.
+  - In-place profile cycling (`s` / `p`) and instant memory toggling (`m`).
+- **Background Agents CLI:**
+  - `claudeswap agents`: Direct CLI subcommand to attach, inspect, or stop background agents.
+- **Enhanced Account Handoff & Profile Removal:**
+  - Interactive Bubble Tea menu for `claudeswap handoff` and quick confirmation for profile removal.
+- **Architecture Guidelines & Skill Toolkits:**
+  - Project rules (`AGENTS.md`, `GEMINI.md`) and automation skills (`claudeswap-release`, `claudeswap-profile-sync`, `claudeswap-tui-dev`).
+
+---
+
 ## [1.0.0] - 2026-10-06
 
 ### Initial Release of ClaudeSwap

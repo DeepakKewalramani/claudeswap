@@ -110,12 +110,19 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 		t.Fatalf("Expected result action 'new', got %+v", m.Result)
 	}
 
-	// 8. Test 's' for switch profile
-	m = NewSessionBrowserModel(groups, testProf, true)
+	// 8. Test 's' for in-place profile cycling
+	secondProf := &profile.Profile{ID: "prof2", Name: "Work"}
+	m = NewSessionBrowserModel(groups, testProf, true, testProf, secondProf)
 	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
 	m = updated.(SessionBrowserModel)
-	if m.Result == nil || m.Result.Action != "switch_profile" {
-		t.Fatalf("Expected result action 'switch_profile', got %+v", m.Result)
+	if m.activeProfile == nil || m.activeProfile.ID != "prof2" {
+		t.Fatalf("Expected active profile to cycle to 'prof2', got %+v", m.activeProfile)
+	}
+	// Press 's' again to cycle back to testProf
+	updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}})
+	m = updated.(SessionBrowserModel)
+	if m.activeProfile == nil || m.activeProfile.ID != testProf.ID {
+		t.Fatalf("Expected active profile to cycle back to %s, got %+v", testProf.ID, m.activeProfile)
 	}
 
 	// 9. Test 'd' delete confirmation
@@ -167,5 +174,30 @@ func TestSessionBrowser_NavigationAndActions(t *testing.T) {
 	}
 	if !strings.Contains(view, "Sarvam AI") || !strings.Contains(view, "docs.sarvam.ai/pricing") {
 		t.Errorf("View missing live activity and web sources inspector elements:\n%s", view)
+	}
+	if !strings.Contains(view, "Tab: Switch Pane") || !strings.Contains(view, "Enter: Open") {
+		t.Errorf("View missing clean footer text:\n%s", view)
+	}
+
+	// 12. Test Enter on a live background session automatically performs 'fork'
+	liveGroups := []session.ProjectGroup{
+		{
+			Name: "live-proj",
+			Sessions: []session.Session{
+				{
+					ID:       "live-session-1234",
+					Title:    "Live Daemon Task",
+					IsLive:   true,
+					LiveStatus: "running",
+				},
+			},
+		},
+	}
+	mLive := NewSessionBrowserModel(liveGroups, testProf, true)
+	mLive.focusSidebar = false
+	updatedLive, _ := mLive.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	mLive = updatedLive.(SessionBrowserModel)
+	if mLive.Result == nil || mLive.Result.Action != "fork" {
+		t.Fatalf("Expected live session Enter to action 'fork', got %+v", mLive.Result)
 	}
 }

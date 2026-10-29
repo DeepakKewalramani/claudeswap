@@ -13,7 +13,7 @@ import (
 
 // SessionBrowserResult is returned when the session browser exits.
 type SessionBrowserResult struct {
-	Action  string // "resume", "new", "switch_profile", "toggle_memory", "handoff", "delete", "back"
+	Action  string // "resume", "fork", "attach", "new", "switch_profile", "toggle_memory", "handoff", "delete", "back"
 	Session *session.Session
 	Group   *session.ProjectGroup
 	Profile *profile.Profile
@@ -35,6 +35,8 @@ type SessionBrowserModel struct {
 	groups           []session.ProjectGroup
 	tabs             []SessionTab
 	activeTabIdx     int
+	profiles         []*profile.Profile
+	activeProfileIdx int
 	activeProfile    *profile.Profile
 	sharedMemory     bool
 	activeGroupIdx   int
@@ -50,7 +52,7 @@ type SessionBrowserModel struct {
 }
 
 // NewSessionBrowserModel initializes the session explorer TUI with profile and memory state.
-func NewSessionBrowserModel(groups []session.ProjectGroup, activeProfile *profile.Profile, sharedMemory bool) SessionBrowserModel {
+func NewSessionBrowserModel(groups []session.ProjectGroup, activeProfile *profile.Profile, sharedMemory bool, allProfiles ...*profile.Profile) SessionBrowserModel {
 	var tabs []SessionTab
 	tabNum := 1
 	for gi, g := range groups {
@@ -76,15 +78,32 @@ func NewSessionBrowserModel(groups []session.ProjectGroup, activeProfile *profil
 		}
 	}
 
+	profs := allProfiles
+	if len(profs) == 0 && activeProfile != nil {
+		profs = []*profile.Profile{activeProfile}
+	}
+
+	activeIdx := 0
+	if activeProfile != nil {
+		for i, p := range profs {
+			if p != nil && p.ID == activeProfile.ID {
+				activeIdx = i
+				break
+			}
+		}
+	}
+
 	return SessionBrowserModel{
-		groups:        groups,
-		tabs:          tabs,
-		activeTabIdx:  0,
-		activeProfile: activeProfile,
-		sharedMemory:  sharedMemory,
-		focusSidebar:  true,
-		showInspector: true,
-		styles:        DefaultStyles(),
+		groups:           groups,
+		tabs:             tabs,
+		activeTabIdx:     0,
+		profiles:         profs,
+		activeProfileIdx: activeIdx,
+		activeProfile:    activeProfile,
+		sharedMemory:     sharedMemory,
+		focusSidebar:     true,
+		showInspector:    true,
+		styles:           DefaultStyles(),
 	}
 }
 
@@ -173,8 +192,12 @@ func (m SessionBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			curSess := m.currentSession()
 			if curSess != nil {
+				action := "resume"
+				if curSess.IsLive {
+					action = "fork"
+				}
 				m.Result = &SessionBrowserResult{
-					Action:  "resume",
+					Action:  action,
 					Session: curSess,
 					Group:   m.currentGroup(),
 					Profile: m.activeProfile,
@@ -183,6 +206,30 @@ func (m SessionBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if m.focusSidebar && len(m.groups) > 0 {
 				// Switch focus into session list
 				m.focusSidebar = false
+			}
+
+		case "f": // Fork session (branch off a copy with --fork-session)
+			curSess := m.currentSession()
+			if curSess != nil {
+				m.Result = &SessionBrowserResult{
+					Action:  "fork",
+					Session: curSess,
+					Group:   m.currentGroup(),
+					Profile: m.activeProfile,
+				}
+				return m, tea.Quit
+			}
+
+		case "a": // Attach to background session
+			curSess := m.currentSession()
+			if curSess != nil {
+				m.Result = &SessionBrowserResult{
+					Action:  "attach",
+					Session: curSess,
+					Group:   m.currentGroup(),
+					Profile: m.activeProfile,
+				}
+				return m, tea.Quit
 			}
 
 		case "n": // New session in current group
@@ -232,14 +279,12 @@ func (m SessionBrowserModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 
-		case "s", "p": // Switch profile
-			m.Result = &SessionBrowserResult{
-				Action:  "switch_profile",
-				Session: m.currentSession(),
-				Group:   m.currentGroup(),
-				Profile: m.activeProfile,
+		case "s", "p": // Switch profile in-place instantly without quitting
+			if len(m.profiles) > 1 {
+				m.activeProfileIdx = (m.activeProfileIdx + 1) % len(m.profiles)
+				m.activeProfile = m.profiles[m.activeProfileIdx]
 			}
-			return m, tea.Quit
+			return m, nil
 
 		case "m": // Toggle shared memory
 			m.sharedMemory = !m.sharedMemory
@@ -329,7 +374,11 @@ func (m SessionBrowserModel) renderHeader() string {
 	header.WriteString(m.styles.Title.Render(titleStr))
 
 	if m.activeProfile != nil {
-		profBadge := m.styles.ReadyBadge.Render(fmt.Sprintf(" Profile: %s ", m.activeProfile.Name))
+		profText := fmt.Sprintf(" Profile: %s ", m.activeProfile.Name)
+		if len(m.profiles) > 1 {
+			profText = fmt.Sprintf(" Profile: %s (%d/%d) ", m.activeProfile.Name, m.activeProfileIdx+1, len(m.profiles))
+		}
+		profBadge := m.styles.ReadyBadge.Render(profText)
 		header.WriteString(" " + profBadge)
 	}
 
@@ -497,7 +546,11 @@ func (m SessionBrowserModel) renderCenterPanel(width, height int, showThreeColum
 			relTime := cleanOneLine(formatRelativeTime(s.UpdatedAt), 8)
 			topic := cleanOneLine(s.Title, availTopic)
 
-			row := fmt.Sprintf("%s%-8s %-10s %-8s %s", prefix, shortID, branch, relTime, topic)
+			liveBadge := ""
+			if s.IsLive {
+				liveBadge = " 🟢"
+			}
+			row := fmt.Sprintf("%s%-8s %-10s %-8s %s%s", prefix, shortID, branch, relTime, topic, liveBadge)
 			if len([]rune(row)) > innerWidth {
 				row = string([]rune(row)[:innerWidth])
 			}
@@ -547,11 +600,17 @@ func (m SessionBrowserModel) renderInspector(width, height int) string {
 		return m.styles.InspectorBox.Width(width).Height(height).Render(ib.String())
 	}
 
-	// 1. Header: "telemetry" on left, status on right
-	titleStr := "telemetry"
+	// 1. Header: "Claude Telemetry" on left, status on right
+	titleStr := "Claude Telemetry"
 	statusDiff := time.Since(curSess.UpdatedAt)
 	var statusPill string
-	if statusDiff < 10*time.Minute {
+	if curSess.IsLive {
+		badgeText := "● LIVE"
+		if curSess.Entrypoint == "claude-desktop" {
+			badgeText = "● CLAUDE DESKTOP"
+		}
+		statusPill = m.styles.ReadyBadge.Render(badgeText)
+	} else if statusDiff < 10*time.Minute {
 		statusPill = m.styles.ReadyBadge.Render("● active ") + m.styles.TextMuted.Render(formatRelativeTime(curSess.UpdatedAt))
 	} else {
 		statusPill = m.styles.TextMuted.Render("○ idle " + formatRelativeTime(curSess.UpdatedAt))
@@ -565,7 +624,21 @@ func (m SessionBrowserModel) renderInspector(width, height int) string {
 	ib.WriteString(hdr + "\n")
 	ib.WriteString(m.styles.Divider.Render(strings.Repeat("─", innerWidth)) + "\n\n")
 
-	// 2. context section
+	// 2. session name section
+	ib.WriteString(m.styles.GadgetHeader.Render("session") + "\n")
+	sessTitle := curSess.Title
+	if sessTitle == "" {
+		sessTitle = "Session " + shortID(curSess.ID)
+	}
+	sessLine := fmt.Sprintf("  %s (%s)", cleanOneLine(sessTitle, innerWidth-14), shortID(curSess.ID))
+	ib.WriteString(sessLine + "\n")
+	if curSess.IsLive && curSess.WaitingFor != "" {
+		ib.WriteString(m.styles.WarnBadge.Render("  ⚡ status: waiting for "+curSess.WaitingFor) + "\n")
+		ib.WriteString(m.styles.TextMuted.Render("  (In background • [f] Fork • [a] Attach)") + "\n")
+	}
+	ib.WriteString("\n")
+
+	// 3. context section
 	ib.WriteString(m.styles.GadgetHeader.Render("context") + "\n")
 	modelName := curSess.Model
 	if modelName == "" {
@@ -773,7 +846,7 @@ func (m SessionBrowserModel) View() string {
 		}
 		footerText = fmt.Sprintf("⚠ PERMANENTLY DELETE session %s? Press [y] to confirm, [n] to cancel", sid)
 	} else {
-		footerText = "Tab: Pane • 1-9/[]: Tabs • i: Toggle Inspector • Enter: Resume • n: New • s: Profile • x: Matrix • q: Back"
+		footerText = "Tab: Switch Pane • 1-9: Tabs • Enter: Open • f: Fork • a: Attach • n: New • s: Profile • q: Exit"
 	}
 	footer := m.styles.Footer.Render(centerText(footerText, totalWidth))
 
@@ -804,4 +877,11 @@ func formatTokenCount(n int64) string {
 		return fmt.Sprintf("%.1fk cached", float64(n)/1_000)
 	}
 	return fmt.Sprintf("%d tokens", n)
+}
+
+func shortID(id string) string {
+	if len(id) > 8 {
+		return id[:8]
+	}
+	return id
 }

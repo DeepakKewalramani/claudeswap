@@ -15,3 +15,7 @@ dist/
 # OS artifacts
 .DS_Store
 Thumbs.db
+
+# Project-level agent rules and skills
+!.agents/
+

@@ -42,6 +42,7 @@ switch active sessions to another account quota, or clean up old transcripts.`,
 		newSessionListCmd(app),
 		newSessionResumeCmd(app),
 		newSessionDeleteCmd(app),
+		newAgentsCmd(app),
 	)
 
 	return cmd
@@ -59,6 +60,7 @@ func newSessionListCmd(app *AppContext) *cobra.Command {
 
 func newSessionResumeCmd(app *AppContext) *cobra.Command {
 	var profileFlag string
+	var forkFlag bool
 
 	cmd := &cobra.Command{
 		Use:   "resume [session-id]",
@@ -83,11 +85,12 @@ func newSessionResumeCmd(app *AppContext) *cobra.Command {
 				return err
 			}
 
-			return resumeSessionWithProfile(app, p, sess, group)
+			return resumeSessionWithProfile(app, p, sess, group, forkFlag)
 		},
 	}
 
 	cmd.Flags().StringVarP(&profileFlag, "profile", "p", "", "Profile to resume the session under")
+	cmd.Flags().BoolVarP(&forkFlag, "fork", "f", false, "Branch off a copy instead of resuming directly (--fork-session)")
 
 	return cmd
 }
@@ -122,6 +125,29 @@ func newSessionDeleteCmd(app *AppContext) *cobra.Command {
 	}
 }
 
+func newAgentsCmd(app *AppContext) *cobra.Command {
+	return &cobra.Command{
+		Use:   "agents [flags]",
+		Short: "Manage Claude background agents and sessions",
+		Long:  "Inspect, attach to, or stop Claude background agents and sessions.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _ := app.CfgStore.Load()
+			shared := cfg != nil && cfg.SharedContext
+			prof, err := resolveTargetProfile(app, "")
+			if err != nil {
+				return err
+			}
+			agentArgs := append([]string{"agents"}, args...)
+			code, err := app.Launcher.Launch(prof, agentArgs, shared)
+			if err != nil {
+				return err
+			}
+			os.Exit(code)
+			return nil
+		},
+	}
+}
+
 func runSessionBrowserTUI(app *AppContext) error {
 	cfg, _ := app.CfgStore.Load()
 	var defaultProf string
@@ -136,17 +162,23 @@ func runSessionBrowserTUI(app *AppContext) error {
 }
 
 func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) error {
-	for {
-		groups, err := app.SessMgr.ScanProjects()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "✗ Error scanning sessions: %v\n", err)
-			return err
-		}
+	groups, err := app.SessMgr.ScanProjects()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "✗ Error scanning sessions: %v\n", err)
+		return err
+	}
 
+	for {
 		cfg, _ := app.CfgStore.Load()
 		shared := cfg != nil && cfg.SharedContext
 
-		model := tui.NewSessionBrowserModel(groups, prof, shared)
+		allProfs, _ := app.Manager.ListProfiles()
+		var profPtrs []*profile.Profile
+		for i := range allProfs {
+			profPtrs = append(profPtrs, &allProfs[i])
+		}
+
+		model := tui.NewSessionBrowserModel(groups, prof, shared, profPtrs...)
 		p := tea.NewProgram(model)
 		finalModel, err := p.Run()
 		if err != nil {
@@ -159,13 +191,29 @@ func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) err
 		}
 
 		res := resModel.Result
+		if res.Profile != nil {
+			prof = res.Profile
+		}
+
 		switch res.Action {
 		case "resume":
-			_ = resumeSessionWithProfileInteractive(app, prof, res.Session, res.Group)
+			_ = resumeSessionWithProfileInteractive(app, prof, res.Session, res.Group, false)
+			groups, _ = app.SessMgr.ScanProjects()
+			continue
+
+		case "fork":
+			_ = resumeSessionWithProfileInteractive(app, prof, res.Session, res.Group, true)
+			groups, _ = app.SessMgr.ScanProjects()
+			continue
+
+		case "attach":
+			_ = attachSessionWithProfileInteractive(app, prof, res.Session, res.Group)
+			groups, _ = app.SessMgr.ScanProjects()
 			continue
 
 		case "new":
 			_ = launchNewSessionWithProfileInteractive(app, prof, res.Group)
+			groups, _ = app.SessMgr.ScanProjects()
 			continue
 
 		case "matrix":
@@ -193,7 +241,7 @@ func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) err
 		case "handoff":
 			nextProf, proceed := PromptHandoffMenu(app, prof)
 			if proceed && nextProf != nil {
-				return resumeSessionWithProfile(app, nextProf, res.Session, res.Group)
+				return resumeSessionWithProfile(app, nextProf, res.Session, res.Group, false)
 			}
 			continue
 
@@ -209,13 +257,21 @@ func runSessionBrowserTUIWithProfile(app *AppContext, prof *profile.Profile) err
 	}
 }
 
-func resumeSessionWithProfileInteractive(app *AppContext, p *profile.Profile, sess *session.Session, group *session.ProjectGroup) error {
-	fmt.Printf("\n✓ Attaching to session %s (%s)\n", sess.ID[:8], sess.Title)
+func resumeSessionWithProfileInteractive(app *AppContext, p *profile.Profile, sess *session.Session, group *session.ProjectGroup, fork bool) error {
+	actionLabel := "Attaching to"
+	if fork {
+		actionLabel = "Forking and resuming"
+	}
+	fmt.Printf("\n✓ %s session %s (%s)\n", actionLabel, sess.ID[:8], sess.Title)
 	fmt.Printf("✓ Profile: %s (%s)\n", p.Name, p.Shortcut)
-	if sess.ProjectCWD != "" {
-		fmt.Printf("✓ Directory: %s\n\n", sess.ProjectCWD)
-		if info, err := os.Stat(sess.ProjectCWD); err == nil && info.IsDir() {
-			_ = os.Chdir(sess.ProjectCWD)
+	targetDir := sess.ProjectCWD
+	if targetDir == "" && group != nil {
+		targetDir = group.CWD
+	}
+	if targetDir != "" {
+		fmt.Printf("✓ Directory: %s\n\n", targetDir)
+		if info, err := os.Stat(targetDir); err == nil && info.IsDir() {
+			_ = os.Chdir(targetDir)
 		}
 	}
 
@@ -223,9 +279,57 @@ func resumeSessionWithProfileInteractive(app *AppContext, p *profile.Profile, se
 	shared := cfg != nil && cfg.SharedContext
 
 	resumeArgs := []string{"--resume", sess.ID}
-	_, err := app.Launcher.Launch(p, resumeArgs, shared)
+	if fork {
+		resumeArgs = append(resumeArgs, "--fork-session")
+	}
+
+	code, err := app.Launcher.Launch(p, resumeArgs, shared)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "✗ Error resuming session: %v\n", err)
+	}
+
+	// If regular resume failed (e.g. background session lock or non-zero exit code),
+	// automatically branch off a copy with --fork-session seamlessly.
+	if code != 0 && !fork {
+		short := sess.ID
+		if len(short) > 8 {
+			short = short[:8]
+		}
+		fmt.Printf("\n⚡ Session %s is running in background. Auto-branching with --fork-session...\n", short)
+		forkArgs := []string{"--resume", sess.ID, "--fork-session"}
+		_, _ = app.Launcher.Launch(p, forkArgs, shared)
+	}
+
+	return nil
+}
+
+func attachSessionWithProfileInteractive(app *AppContext, p *profile.Profile, sess *session.Session, group *session.ProjectGroup) error {
+	short := sess.ID
+	if len(short) > 8 {
+		short = short[:8]
+	}
+	fmt.Printf("\n✓ Attaching to background session %s (%s)\n", short, sess.Title)
+	fmt.Printf("✓ Profile: %s (%s)\n", p.Name, p.Shortcut)
+	targetDir := sess.ProjectCWD
+	if targetDir == "" && group != nil {
+		targetDir = group.CWD
+	}
+	if targetDir != "" {
+		fmt.Printf("✓ Directory: %s\n\n", targetDir)
+		if info, err := os.Stat(targetDir); err == nil && info.IsDir() {
+			_ = os.Chdir(targetDir)
+		}
+	}
+
+	cfg, _ := app.CfgStore.Load()
+	shared := cfg != nil && cfg.SharedContext
+
+	attachArgs := []string{"attach", short}
+	code, err := app.Launcher.Launch(p, attachArgs, shared)
+	if err != nil || code != 0 {
+		fmt.Printf("\n⚡ Background session %s cannot be attached directly. Auto-branching with --fork-session...\n", short)
+		forkArgs := []string{"--resume", sess.ID, "--fork-session"}
+		_, _ = app.Launcher.Launch(p, forkArgs, shared)
 	}
 	return nil
 }
@@ -350,14 +454,21 @@ func resolveTargetProfile(app *AppContext, profileName string) (*profile.Profile
 	return &profiles[0], nil
 }
 
-func resumeSessionWithProfile(app *AppContext, p *profile.Profile, sess *session.Session, group *session.ProjectGroup) error {
-	fmt.Printf("\n✓ Resuming session %s (%s)\n", sess.ID[:8], sess.Title)
+func resumeSessionWithProfile(app *AppContext, p *profile.Profile, sess *session.Session, group *session.ProjectGroup, fork bool) error {
+	actionLabel := "Resuming"
+	if fork {
+		actionLabel = "Forking and resuming"
+	}
+	fmt.Printf("\n✓ %s session %s (%s)\n", actionLabel, sess.ID[:8], sess.Title)
 	fmt.Printf("✓ Profile: %s (%s)\n", p.Name, p.Shortcut)
-	if sess.ProjectCWD != "" {
-		fmt.Printf("✓ Directory: %s\n\n", sess.ProjectCWD)
-		// Change working directory to the session's original folder if valid
-		if info, err := os.Stat(sess.ProjectCWD); err == nil && info.IsDir() {
-			_ = os.Chdir(sess.ProjectCWD)
+	targetDir := sess.ProjectCWD
+	if targetDir == "" && group != nil {
+		targetDir = group.CWD
+	}
+	if targetDir != "" {
+		fmt.Printf("✓ Directory: %s\n\n", targetDir)
+		if info, err := os.Stat(targetDir); err == nil && info.IsDir() {
+			_ = os.Chdir(targetDir)
 		}
 	}
 
@@ -365,10 +476,25 @@ func resumeSessionWithProfile(app *AppContext, p *profile.Profile, sess *session
 	shared := cfg != nil && cfg.SharedContext
 
 	resumeArgs := []string{"--resume", sess.ID}
+	if fork {
+		resumeArgs = append(resumeArgs, "--fork-session")
+	}
+
 	code, err := app.Launcher.Launch(p, resumeArgs, shared)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "✗ Error resuming session: %v\n", err)
 	}
+
+	if code != 0 && !fork {
+		short := sess.ID
+		if len(short) > 8 {
+			short = short[:8]
+		}
+		fmt.Printf("\n⚡ Session %s is running in background. Auto-branching with --fork-session...\n", short)
+		forkArgs := []string{"--resume", sess.ID, "--fork-session"}
+		code, err = app.Launcher.Launch(p, forkArgs, shared)
+	}
+
 	os.Exit(code)
 	return nil
 }
