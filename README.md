@@ -1,72 +1,167 @@
 # ClaudeSwap
 
 <p align="center">
-  <strong>Instant Account Swapper & Memory Continuity for Claude Code</strong>
+  <strong>Instant Account Swapper, Multi-Session Matrix & Shared Memory Continuity for Claude Code</strong>
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-  <a href="https://golang.org"><img src="https://img.shields.io/badge/go-1.22%2B-00ADD8.svg" alt="Go Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg" alt="Platforms"></a>
-  <a href="#"><img src="https://img.shields.io/badge/security-zero--credential%20storage-brightgreen.svg" alt="Security"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
+  <a href="https://golang.org"><img src="https://img.shields.io/badge/go-1.22%2B-00ADD8.svg?style=flat-square" alt="Go Version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/version-1.1.0-FF5722.svg?style=flat-square" alt="Version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg?style=flat-square" alt="Platforms"></a>
+  <a href="#"><img src="https://img.shields.io/badge/security-zero--credential%20storage-brightgreen.svg?style=flat-square" alt="Security"></a>
 </p>
 
 ---
 
-**ClaudeSwap** (`claudeswap`) is a fast, secure, cross-platform developer CLI that lets you manage and instantly swap between multiple Claude Code accounts with **unified context, shared session memory, and zero downtime**.
+**ClaudeSwap** is a developer tool written in Go that lets you manage, isolate, and instantly switch between multiple Claude Code profiles with **zero downtime, shared memory continuity, folder-wise session exploration, and multi-agent supervision**.
 
-When your current Claude account hits rate limits or quota, ClaudeSwap seamlessly rotates your active conversation to your next account so you can continue coding without explaining context all over again.
+```
+  ┌──────────────────┐       Limit Exhausted?       ┌──────────────────┐
+  │  Claude Profile  │ ───────────────────────────> │  Claude Profile  │
+  │     [Work]       │    claudeswap handoff        │    [Personal]    │
+  └─────────┬────────┘                              └─────────┬────────┘
+            │                                                 │
+            └───────────────>  Unified Context <──────────────┘
+                              (~/.claudeswap/shared)
+                              • Full Chat Transcripts
+                              • Project Folder Memory
+                              • File Edit Caches
+                              • Command History
+```
 
-> **Security Guarantee:**
-> ClaudeSwap operates with a strict zero-credential boundary. It does not store, read, copy, or manage Claude passwords, OTPs, access tokens, refresh tokens, or other authentication secrets. Authentication remains entirely native to Claude Code.
+> **🛡️ Strict Zero-Credential Boundary:**  
+> ClaudeSwap operates with an inviolable security model. It **never** reads, stores, intercepts, or logs Claude tokens, OAuth cookies, passwords, or keychain secrets. Authentication remains 100% native and isolated within each Claude Code profile.
 
 ---
 
-## ✨ Features
+## ⚡ The Problems ClaudeSwap Solves
 
-- **⚡ Instant Account Swapping (`claudeswap switch`):** Swap active Claude accounts on the fly with an interactive prompt or direct argument.
-- **🔄 Quota Limit Rotation (`claudeswap handoff`):** When one account hits token or rate limits, ClaudeSwap passes the conversation baton to your next account and resumes with Claude Code's `--resume` flag.
-- **🧠 Continuous Memory & Shared Context:** Keep project sessions, prompt history, and execution context synced across all your profiles with `claudeswap context on`.
-- **🛡️ Strict Security Boundary:** Zero credential storage or token handling. Claude Code authenticates natively and securely.
-- **📦 Process Isolation:** Fully separated configuration directories (`CLAUDE_CONFIG_DIR`) ensure sessions, memory, and settings never collide.
-- **👥 Concurrent Profiles:** Run multiple Claude Code instances under different accounts simultaneously without lock contention.
-- **🎯 Direct Shortcuts:** Launch accounts directly with `claudeswap-<name>` (e.g. `claudeswap-deepak`, `claudeswap-rohit`).
-- **💾 Chat Export & Import:** Export chats to portable `.tar.gz` archives or readable `.md` files; import sessions into any profile or machine.
-- **🖥️ Interactive Terminal UI:** Built with Bubble Tea & Lip Gloss for a terminal UI with keyboard navigation and instant status indicators.
-- **🩹 Self-Healing Storage:** Atomic writes with automatic backup creation and corruption recovery.
-- **🩺 Built-in Diagnostics:** `claudeswap doctor` checks filesystem integrity, CLI availability, PATH configuration, and shell hooks.
+| Challenge | Without ClaudeSwap | With ClaudeSwap |
+|---|---|---|
+| **Rate Limit / Quota Exhaustion** | Workflow stops for 4+ hours, or you manually log out, re-authenticate, and lose your 50-turn conversation context. | Type `claudeswap handoff` and resume the exact conversation under another account in **under 2 seconds**. |
+| **Multi-Repo Parallel Coding** | 5 terminal tabs with background agents hitting hidden permission prompts and process lock conflicts (`daemon.lock`). | `claudeswap matrix` provides a live mission-control dashboard supervising 20+ parallel sessions with instant 1-click attach. |
+| **Scattered Past Sessions** | Sessions buried across unreadable hashed folders in `~/.claude/projects/`. | `claudeswap sessions` groups your work folder-wise with deep telemetry, token micro-gauges, and 1–9 tab switching. |
+| **Context Fracturing** | Each account starts with zero memory of previous architectures and file edits. | `claudeswap context on` pools transferable project memory and history without sharing credentials. |
+
+---
+
+## 🖥️ Terminal Experience
+
+### 1. Folder-Wise Session Explorer & Telemetry HUD (`claudeswap sessions`)
+
+Browse all active and historical sessions grouped by project workspace, inspect real-time token consumption, and review execution trails before resuming:
+
+```text
+ ┌── ClaudeSwap Explorer ──┬── [1] payment-service ──┬── [2] web-dashboard ──┬── Profile: Work (✓ Ready) ── Memory: ON ──┐
+ │                                                                                                                       │
+ │  WORKSPACES (4)         │  SESSIONS (3)                  │  TELEMETRY INSPECTOR                                      │
+ │                         │                                │                                                           │
+ │  ❯ payment-service  (3) │  ❯ refactor: auth middleware   │  id:       a8f10b2c                                       │
+ │    web-dashboard    (2) │    2m ago • 4 turns • 42k tok  │  model:    claude-3-7-sonnet                              │
+ │    worker-daemon    (1) │    [████████░░░░░░░░░░] 42%    │  status:   active                                         │
+ │    mobile-client    (0) │                                │  tokens:   42,150 [████████░░░░] 42%                      │
+ │                         │    feat: stripe webhooks       │  speed:    58 tok/s                                       │
+ │                         │    1h ago • 12 turns • 88k tok │  cost:     $0.14                                          │
+ │                         │    [██████████████░░░░] 74%    │                                                           │
+ │                         │                                │  thinking: analyzing webhook idempotency...               │
+ │                         │    fix: connection timeout     │  trail:    Read file -> Edit file -> Run tests            │
+ │                         │    yesterday • 6 turns • 18k   │  files:    middleware/auth.go (+24/-3)                    │
+ │                         │                                │            server.go (+12/-1)                             │
+ ├─────────────────────────┴────────────────────────────────┴───────────────────────────────────────────────────────────┤
+ │ Tab: Switch Pane • ↑↓: Navigate • Enter: Open • f: Fork • s: Cycle Profile • m: Toggle Memory • q: Exit             │
+ └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 2. Multi-Session Supervisor Matrix (`claudeswap matrix`)
+
+Supervise up to 20+ parallel Claude Code background sessions across your repositories in a live status matrix:
+
+```text
+ ┌── ClaudeSwap Supervisor Matrix ────────────────────────────── [Active: 3/4] ── Refresh: 1s ──┐
+ │                                                                                              │
+ │  [1] payment-service                 [2] web-dashboard                                       │
+ │  ● RUNNING                           ○ IDLE                                                  │
+ │  Session: a8f10b2c (refactor auth)   Session: f3c21a9d (navbar polish)                       │
+ │  Model:   claude-3-7-sonnet          Model:   claude-3-5-haiku                               │
+ │  Tokens:  [████████░░] 42k (42%)     Tokens:  [████░░░░░░] 18k (18%)                         │
+ │  Trail:   running unit tests...      Trail:   awaiting user prompt                           │
+ │                                                                                              │
+ │  [3] worker-daemon                   [4] mobile-client                                       │
+ │  ⚡ WAITING FOR PERMISSION           ○ COMPLETED                                             │
+ │  Session: 7b19de33 (sqs consumer)    Session: 2e88a104 (asset optimization)                  │
+ │  Model:   claude-3-7-sonnet          Model:   claude-3-5-sonnet                              │
+ │  Tokens:  [████████████░░] 78k       Tokens:  [████████████████] 110k                        │
+ │  Action:  needs Bash permission      Trail:   finished in 4m 12s                             │
+ ├──────────────────────────────────────────────────────────────────────────────────────────────┤
+ │ 1-4: Attach/Fork Session • r: Force Refresh • p: Switch Profile • q: Back to Shell          │
+ └──────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 3. Interactive Profile Dashboard (`claudeswap`)
+
+Manage profiles, inspect quota statuses, and toggle shared context from a clean Bubble Tea interface:
+
+```text
+ ╭────────────────────────────────────────────────╮
+ │                 ClaudeSwap                     │
+ │      Claude Profile Manager & Swapper          │
+ ├────────────────────────────────────────────────┤
+ │                                                │
+ │  Profiles                                      │
+ │                                                │
+ │  ❯ Work Account        ✓ Ready                 │
+ │    Personal Account    ✓ Ready                 │
+ │    Consulting Team     ○ Logged out            │
+ │                                                │
+ │  ────────────────────────────────────────────  │
+ │                                                │
+ │    Add profile                                 │
+ │    Session Explorer (TUI)                      │
+ │    Supervisor Matrix                           │
+ │    Settings & Memory                           │
+ │    Doctor Diagnostics                          │
+ │                                                │
+ ├────────────────────────────────────────────────┤
+ │ ↑↓ Navigate   Enter Select   m Memory   q Quit │
+ ╰────────────────────────────────────────────────╯
+```
 
 ---
 
 ## 🚀 Installation
 
-### Option 1: One-Line Installer (macOS & Linux)
+### Option 1: Quick Install Script (macOS & Linux)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/claudeswap/claudeswap/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.sh | sh
 ```
 
 ### Option 2: Go Install (Any Platform)
 
 ```bash
-go install github.com/claudeswap/claudeswap/cmd/claudeswap@latest
+go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest
 ```
 
 ### Option 3: Windows PowerShell
 
 ```powershell
-irm https://raw.githubusercontent.com/claudeswap/claudeswap/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.ps1 | iex
 ```
 
 ### Option 4: Build from Source
 
 ```bash
-git clone https://github.com/claudeswap/claudeswap.git
+git clone https://github.com/DeepakKewalramani/claudeswap.git
 cd claudeswap
 make install
 ```
 
-After installation, ensure your shell PATH includes ClaudeSwap:
+Configure shell autocompletion and shortcuts:
 ```bash
 claudeswap doctor --install-shell
 source ~/.zshrc    # or ~/.bashrc
@@ -74,104 +169,81 @@ source ~/.zshrc    # or ~/.bashrc
 
 ---
 
-## 🕹️ Everyday Developer Experience
+## 💡 Real-World Use Cases & Examples
 
-### 1. Launch a Profile Directly
+### Scenario 1: The Mid-Sprint Limit Handoff
+You're 60 turns into building a complex feature when Claude Code hits the hourly usage cap:
+
 ```bash
-# Launch Deepak's Claude Code profile
-claudeswap-deepak
+# 1. Start the work under your primary profile
+claudeswap-work
 
-# Launch Rohit's Claude Code profile
-claudeswap-rohit
+# 2. [Claude outputs]: "Rate limit reached until 4:00 PM"
 
-# Launch with flags forwarded to Claude Code unchanged
-claudeswap-deepak --continue
-claudeswap-rohit --resume
+# 3. Rotate conversation to your personal account quota seamlessly:
+claudeswap handoff personal
 ```
+**What happens behind the scenes:**
+1. ClaudeSwap verifies shared context is enabled.
+2. It syncs the transcript to `~/.claudeswap/shared/sessions`.
+3. It immediately launches Claude Code under the `personal` account using `--resume <session-id>`.
+4. Claude resumes with the full conversation history intact.
 
-### 2. Switch Accounts Instantly
+---
+
+### Scenario 2: Supervising Multiple Repos Simultaneously
+You have several Claude Code sessions running across different microservices:
+
 ```bash
-# Interactive menu: pick an account and continue current conversation
-claudeswap switch
-
-# Or switch directly to a specific profile
-claudeswap switch rohit
+# Open the Supervisor Matrix
+claudeswap matrix
 ```
+- See which sessions are actively computing, idle, or blocked waiting for a shell execution confirmation.
+- Press **`1`**, **`2`**, or **`3`** to jump directly into any running session.
+- If a background session is currently locked, ClaudeSwap auto-branches a copy with `--fork-session` so you never crash active processes.
 
-### 3. Open the Interactive Dashboard
+---
+
+### Scenario 3: Shared Memory vs Strict Account Isolation
+Easily toggle between unified context (for solo devs) and strict isolation (for client work):
+
 ```bash
-claudeswap
-```
+# Enable unified memory (transcripts, project memory, command history shared)
+claudeswap context on
 
-```text
-╭────────────────────────────────────────────────╮
-│                 ClaudeSwap                     │
-│      Claude Profile Manager & Swapper          │
-├────────────────────────────────────────────────┤
-│                                                │
-│  Profiles                                      │
-│                                                │
-│  ❯ Deepak             ✓ Ready                  │
-│    Rohit Soni         ✓ Ready                  │
-│    Personal           ✓ Ready                  │
-│                                                │
-│  ────────────────────────────────────────────  │
-│                                                │
-│    Add profile                                 │
-│    Settings                                    │
-│    Diagnostics                                 │
-│    Exit                                        │
-│                                                │
-├────────────────────────────────────────────────┤
-│ ↑↓ Navigate   Enter Select   a Add   q Quit    │
-╰────────────────────────────────────────────────╯
+# Isolate all accounts into separate silos (ideal for NDAs or distinct clients)
+claudeswap context off
+
+# Check current status and active symlinks
+claudeswap context status
 ```
 
 ---
 
-## 🔄 Rotating Accounts on Limit Exhaustion
-
-If Deepak's account reaches its message/token limit in the middle of a coding task:
+### Scenario 4: Fast Direct Shortcuts
+ClaudeSwap automatically generates dedicated launcher binaries in your `$PATH` for each profile:
 
 ```bash
-# Transfer active conversation to Rohit's quota
-claudeswap switch rohit
-```
-
-Claude Code opens under **Rohit's account**, resumes Deepak's conversation transcript with `--resume`, and lets you continue coding without losing any context!
-
-You can toggle shared memory mode anytime:
-```bash
-claudeswap context on      # Enable shared conversation history across accounts
-claudeswap context off     # Keep conversation logs completely isolated
-claudeswap context status  # Check current status
+# Launch specific profiles with any Claude Code flag forwarded transparently:
+claudeswap-work
+claudeswap-personal --continue
+claudeswap-consulting --resume a8f10b2c
 ```
 
 ---
 
-## 💾 Exporting & Importing Chats
+### Scenario 5: Backup & Export Chat Transcripts
+Save and share conversation sessions as portable archives or human-readable Markdown:
 
-### Export Chat Sessions:
 ```bash
-# Export active sessions into a portable archive (.tar.gz)
-claudeswap chat export --output my-chats.tar.gz
+# Export active sessions into a portable .tar.gz archive
+claudeswap chat export --output ./workspace-chats.tar.gz
 
-# Export sessions as human-readable Markdown files (.md)
-claudeswap chat export --format md --output ./chat-notes/
-```
+# Export sessions as clean Markdown notes
+claudeswap chat export --format md --output ./meeting-notes/
 
-### Import Chat Sessions:
-```bash
-# Import an archive into your profiles or shared memory
-claudeswap chat import my-chats.tar.gz
-
-# Resume the imported session immediately
-claudeswap-rohit --resume
-```
-
-### List Discovered Sessions:
-```bash
-claudeswap chat list
+# Import an archive on another machine
+claudeswap chat import ./workspace-chats.tar.gz
 ```
 
 ---
@@ -180,97 +252,95 @@ claudeswap chat list
 
 | Command | Description |
 |---|---|
-| `claudeswap` | Opens the interactive Terminal UI (TUI) |
-| `claudeswap switch [target]` | Hand off conversation or switch active profile |
-| `claudeswap add [name]` | Adds a new profile and sets up its shortcut |
-| `claudeswap list` | Lists all configured profiles and statuses |
-| `claudeswap status [profile]` | Displays profile status and directory details |
-| `claudeswap launch <profile> [args...]` | Launches Claude Code with the specified profile |
-| `claudeswap context [on\|off\|status]` | Enables or disables shared conversation sessions and memory |
-| `claudeswap chat export [profile]` | Exports chat sessions to an archive (.tar.gz) or Markdown (.md) |
-| `claudeswap chat import <archive>` | Imports chat sessions from an archive into a profile |
-| `claudeswap chat list [profile]` | Lists active and past conversation sessions |
-| `claudeswap remove <profile>` | Removes profile metadata (with optional file deletion) |
-| `claudeswap rename <profile> <new-name>` | Renames a profile and updates shortcut |
-| `claudeswap shortcut <profile> [--all]` | Generates or regenerates shortcut launcher scripts |
-| `claudeswap set-default <profile>` | Sets the fallback profile for `claudeswap launch` |
-| `claudeswap settings` | Displays configuration details, backup state, and memory settings |
-| `claudeswap doctor` | Runs diagnostics and checks PATH & CLI health |
-| `claudeswap version` | Displays the current version |
+| `claudeswap` | Opens the interactive Bubble Tea dashboard |
+| `claudeswap sessions` | Full-screen folder-wise session explorer & telemetry HUD |
+| `claudeswap matrix` | Multi-session supervisor matrix for parallel Claude tasks |
+| `claudeswap handoff [profile]` | Seamlessly transfer active conversation to another account quota |
+| `claudeswap agents [flags]` | Inspect, attach to, or stop Claude background agents |
+| `claudeswap launch <profile> [flags]` | Launch Claude Code isolated under a specific profile |
+| `claudeswap context [on\|off\|status]` | Enable or disable unified conversation memory across profiles |
+| `claudeswap add [name]` | Register a new isolated profile and generate shortcuts |
+| `claudeswap list` | Display all configured profiles and operational statuses |
+| `claudeswap status [profile]` | Inspect profile configuration and directory health |
+| `claudeswap chat export [profile]` | Export chat sessions to `.tar.gz` archive or Markdown notes |
+| `claudeswap chat import <archive>` | Import conversation sessions into local profiles |
+| `claudeswap chat list [profile]` | Quick CLI list of active and past conversation logs |
+| `claudeswap remove <profile>` | Remove a profile (with option to preserve configuration files) |
+| `claudeswap rename <profile> <new>` | Rename profile and update direct shortcut launcher |
+| `claudeswap set-default <profile>` | Set default profile for launches |
+| `claudeswap doctor` | System health check (binary paths, permissions, shell setup) |
+| `claudeswap version` | Display current ClaudeSwap version |
 
 ---
 
-## 🔒 Security Model
+## 🔒 Security Architecture
 
-ClaudeSwap operates strictly as an **execution environment coordinator**, never an authentication agent:
+ClaudeSwap acts purely as an **environment coordinator**, never an authentication agent:
 
 ```
 ┌────────────────────────────────────────────────────────┐
 │                      ClaudeSwap                        │
 │                                                        │
-│  • Profile Metadata (`~/.claudeswap/profiles.json`)    │
+│  • Profile Registry (`~/.claudeswap/profiles.json`)    │
 │  • Isolated Dirs (`~/.claudeswap/profiles/<id>/`)      │
-│  • Launcher Scripts (`~/.claudeswap/bin/`)             │
-│  • Interactive Terminal UI & Diagnostics               │
+│  • Direct Shortcuts (`~/.claudeswap/bin/`)             │
+│  • Shared Context Symlinks (`~/.claudeswap/shared/`)   │
+│  • Multi-Session Matrix & Telemetry HUD                │
 └──────────────────────────┬─────────────────────────────┘
-                           │ Sets CLAUDE_CONFIG_DIR
+                           │ Injects CLAUDE_CONFIG_DIR
                            ↓
 ┌────────────────────────────────────────────────────────┐
 │                     Claude Code                        │
 │                                                        │
-│  • Authentication & OAuth Handshake                    │
-│  • Secret Storage & Session State                      │
+│  • Native OAuth Handshake & Token Storage              │
+│  • Local Secrets (`.claude.json`)                      │
 │  • LLM Interaction & Agent Tools                       │
 └────────────────────────────────────────────────────────┘
 ```
 
 ClaudeSwap **NEVER**:
-- Asks for Claude passwords or OTPs
-- Reads, parses, or extracts tokens from credential databases
-- Stores, transmits, or logs tokens or cookies
-- Intercepts or proxies Claude Code traffic
-- Operates remote telemetry or cloud services (100% local-first)
+- Accesses, copies, or logs tokens in `.claude.json` or OS keychains.
+- Proxies or intercepts network traffic.
+- Transmits data to external servers (100% local-first and offline-capable).
 
 ---
 
 ## 📁 Filesystem Layout
 
-ClaudeSwap organizes its state in `~/.claudeswap` (overrideable with `CLAUDESWAP_HOME`):
-
 ```
 ~/.claudeswap/
-├── config.json          # Global app configuration (schema v1, mode 0600)
-├── profiles.json        # Profile metadata registry (schema v1, mode 0600)
-├── shared/              # Unified session context (when shared context is on)
-│   ├── sessions/
-│   ├── projects/
-│   ├── plans/
-│   └── history.jsonl
+├── config.json          # Global app configuration (mode 0600)
+├── profiles.json        # Profile metadata registry (mode 0600)
+├── shared/              # Unified session context pool
+│   ├── sessions/        # Conversation transcripts
+│   ├── projects/        # Workspace memory mappings
+│   ├── file-history/    # Edit caches
+│   ├── plans/           # Active plans
+│   └── history.jsonl    # Unified command history
 ├── profiles/            # Isolated Claude Code directories
-│   ├── deepak/          # Target for CLAUDE_CONFIG_DIR
-│   └── rohit-soni/
-├── bin/                 # Executable direct shortcuts
+│   ├── work/            # Target for CLAUDE_CONFIG_DIR
+│   └── personal/
+├── bin/                 # Generated executable shortcuts
 │   ├── claudeswap
-│   ├── claudeswap-deepak
-│   └── claudeswap-rohit
-├── logs/                # Optional sanitized local logs
-└── backups/             # Atomic backups of profiles and config
+│   ├── claudeswap-work
+│   └── claudeswap-personal
+└── backups/             # Atomic backups of registry and configuration
     ├── profiles.json.bak
     └── config.json.bak
 ```
 
 ---
 
-## 🛠️ Development & Testing
+## 🛠️ Testing & Quality
 
 ```bash
-# Run unit & integration tests
-make test
+# Run unit & integration test suites
+go test -v ./...
 
-# Run linter
-make vet
+# Run static analysis
+go vet ./...
 
-# Build cross-platform releases in dist/
+# Build cross-platform release binaries
 make release
 ```
 
