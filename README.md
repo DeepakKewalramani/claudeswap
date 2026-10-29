@@ -305,6 +305,74 @@ ClaudeSwap **NEVER**:
 
 ---
 
+## 🔒 Security & Bug-Free Architecture
+
+ClaudeSwap is engineered with security-first invariants verified by automated fuzzing and `-race` detection:
+
+1. **Zero Credential Touch:** ClaudeSwap **never** parses, opens, or logs OAuth tokens, session cookies, or secrets inside `.claude.json` or system keychains. Profile switching is managed purely via `CLAUDE_CONFIG_DIR`.
+2. **Zip-Slip & Path Traversal Immunity:** Archive importers (`chat import`) strictly validate canonical paths with `filepath.Clean` and reject entries with `..`, absolute paths, or destinations outside the target directory.
+3. **Command Injection Immunity:** Subprocesses (`claude`) are spawned using direct argv slices (`exec.Command(path, args...)`), completely bypassing shell interpreters (`bash -c`, `sh -c`).
+4. **Race-Free Concurrency:** All shared memory operations, session scanning, and supervisor state pools are fully thread-safe and verified with `go test -race ./...`.
+5. **Atomic Storage & Auto-Healing:** All metadata files (`profiles.json`, `config.json`) use atomic file write-and-rename mechanics (`.tmp` -> `os.Rename`) with automatic `.bak` self-healing on corruption.
+6. **Strict POSIX Permissions:** All created folders are restricted to `0700` and config files to `0600` (readable and writable strictly by the current OS user).
+
+---
+
+## 🔍 Frequently Asked Questions (Search & Troubleshooting)
+
+<details>
+<summary><strong>Q: What should I do when Claude Code says "Rate limit reached until X:XX"?</strong></summary>
+<br>
+
+Run:
+```bash
+claudeswap handoff
+```
+Or specify your secondary profile directly:
+```bash
+claudeswap handoff <secondary-profile>
+```
+ClaudeSwap automatically verifies that shared context is active, syncs the conversation transcript, and opens Claude Code with `--resume <session-id>` under the secondary profile's quota.
+</details>
+
+<details>
+<summary><strong>Q: How do I share project memory across accounts without leaking credentials?</strong></summary>
+<br>
+
+Run:
+```bash
+claudeswap context on
+```
+This safely symlinks non-credential directories (`sessions/`, `projects/`, `file-history/`, `plans/`, and `history.jsonl`) to `~/.claudeswap/shared/`. Your `.claude.json` tokens stay 100% private to each profile folder.
+</details>
+
+<details>
+<summary><strong>Q: How do I avoid "daemon.lock" conflicts when running multiple sessions?</strong></summary>
+<br>
+
+When resuming an active session or inspecting background workers, run:
+```bash
+claudeswap sessions resume <session-id> --fork
+```
+Or in the visual TUI (`claudeswap sessions` or `claudeswap matrix`), press **`f`** to auto-branch the session using Claude Code's `--fork-session` flag.
+</details>
+
+<details>
+<summary><strong>Q: How does ClaudeSwap isolate profiles under the hood?</strong></summary>
+<br>
+
+Claude Code natively reads the environment variable `CLAUDE_CONFIG_DIR`. ClaudeSwap assigns a unique directory for each profile (`~/.claudeswap/profiles/<profile-id>`). Each profile has its own isolated OAuth authentication, settings, and cache.
+</details>
+
+<details>
+<summary><strong>Q: Can I run multiple profiles concurrently in separate terminals?</strong></summary>
+<br>
+
+Yes! Because each profile has its own `CLAUDE_CONFIG_DIR`, you can run `claudeswap-work` in Terminal 1 and `claudeswap-personal` in Terminal 2 simultaneously without any process lock collisions.
+</details>
+
+---
+
 ## 📁 Filesystem Layout
 
 ```
