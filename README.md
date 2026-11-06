@@ -5,6 +5,10 @@
 </p>
 
 <p align="center">
+  ClaudeSwap is a Claude account switcher for developers running multiple Claude Code profiles: switch accounts in seconds, track quota usage, and keep context continuous across profiles, without ever storing credentials.
+</p>
+
+<p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/go-1.22%2B-00ADD8.svg?style=flat-square" alt="Go Version"></a>
   <a href="#"><img src="https://img.shields.io/badge/version-1.1.0-FF5722.svg?style=flat-square" alt="Version"></a>
