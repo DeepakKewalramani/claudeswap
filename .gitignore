@@ -19,3 +19,4 @@ Thumbs.db
 # Project-level agent rules and skills
 !.agents/
 
+.gstack/

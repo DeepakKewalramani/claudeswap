@@ -1,0 +1,2524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClaudeSwap | Switch Claude Code Accounts &amp; Manage Quotas</title>
+  <meta name="description" content="ClaudeSwap is a Claude account switcher for Claude Code. Switch between multiple accounts in seconds, track quotas, supervise parallel sessions, and keep shared memory across profiles without storing credentials.">
+  <meta name="keywords" content="claude account switcher,switch claude accounts,claude code multiple accounts,claude rate limit,claude quota manager,claude code profiles,anthropic">
+  <link rel="canonical" href="https://claudeswap.vercel.app/">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="theme-color" content="#f6f7f9">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://claudeswap.vercel.app/">
+  <meta property="og:title" content="ClaudeSwap | Switch Claude Code Accounts &amp; Manage Quotas">
+  <meta property="og:description" content="Switch between multiple Claude Code accounts in seconds. Track quotas, supervise parallel sessions, and keep shared memory across profiles. No credentials stored.">
+  <meta property="og:image" content="https://claudeswap.vercel.app/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ClaudeSwap: switch Claude Code accounts in seconds">
+  <meta property="og:site_name" content="ClaudeSwap">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ClaudeSwap | Switch Claude Code Accounts &amp; Manage Quotas">
+  <meta name="twitter:description" content="Switch between multiple Claude Code accounts in seconds. Track quotas, supervise parallel sessions, and keep shared memory across profiles.">
+  <meta name="twitter:image" content="https://claudeswap.vercel.app/og-image.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ClaudeSwap",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Linux, Windows",
+    "description": "ClaudeSwap is a Claude account switcher for Claude Code. Switch between multiple accounts in seconds, track quotas, supervise parallel sessions, and keep shared memory across profiles without storing credentials.",
+    "url": "https://claudeswap.vercel.app/",
+    "softwareVersion": "1.1.0",
+    "license": "https://github.com/DeepakKewalramani/claudeswap/blob/main/LICENSE",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Deepak Kewalramani"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I switch between multiple Claude Code accounts?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Install ClaudeSwap, add each profile with 'claudeswap add <name>', then switch instantly with 'claudeswap handoff <name>'. No logging out or re-authenticating."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can ClaudeSwap help when I hit a Claude rate limit or quota?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. When Claude Code reports a rate limit, run 'claudeswap handoff <other-account>' to resume the exact same conversation under another account in under two seconds."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does ClaudeSwap store my Claude API keys or tokens?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. ClaudeSwap never reads, stores, intercepts, or logs tokens, OAuth cookies, passwords, or keychain secrets. Authentication stays 100% native inside each Claude Code profile."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I run multiple Claude Code sessions at once?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. The 'claudeswap matrix' command supervises 20+ parallel background sessions across repositories with live status, token use, and one-click attach or fork."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does context carry over when I switch accounts?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "With 'claudeswap context on', shared memory pools transferable project context, transcripts, and file edit history across profiles without sharing credentials."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I install ClaudeSwap?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "On macOS and Linux run: curl -fsSL https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.sh | sh. Or install with Go: go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Which account does a handoff go to when I have several?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You choose. 'claudeswap handoff <name>' goes to exactly that profile. Run 'claudeswap handoff' with no name and a picker lists your other profiles with a status (Ready, Session out or Logged out). Nothing picks the next account for you."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I avoid daemon.lock conflicts with multiple sessions?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Fork the session instead of attaching to a locked one: 'claudeswap sessions resume <session-id> --fork'. In the sessions or matrix screens, press f to auto-branch with Claude Code's --fork-session flag."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does ClaudeSwap isolate profiles under the hood?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude Code reads the CLAUDE_CONFIG_DIR environment variable. ClaudeSwap gives each profile its own folder (~/.claudeswap/profiles/<id>) with separate login, settings and cache, so profiles can also run in separate terminals at the same time."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --surface-2: #eef1f5;
+      --line: rgba(16, 24, 36, 0.08);
+      --line-strong: rgba(16, 24, 36, 0.14);
+      --text: #16202c;
+      --muted: #57667a;
+      --faint: #8493a7;
+      --accent: #d9561e;
+      --accent-hover: #c34a16;
+      --accent-soft: rgba(217, 86, 30, 0.1);
+      --accent-line: rgba(217, 86, 30, 0.35);
+      --accent-2: #ff9a62;
+      --accent-glow: rgba(217, 86, 30, 0.22);
+      --green: #1a7f37;
+      --green-soft: rgba(26, 127, 55, 0.1);
+      --green-line: rgba(26, 127, 55, 0.35);
+      --blue: #0969da;
+      --blue-soft: rgba(9, 105, 218, 0.1);
+      --blue-line: rgba(9, 105, 218, 0.35);
+      --amber: #9a6700;
+      --amber-soft: rgba(154, 103, 0, 0.12);
+      --amber-line: rgba(154, 103, 0, 0.35);
+      --red: #cf222e;
+      --header-bg: rgba(246, 247, 249, 0.85);
+      --glow-orange: rgba(217, 86, 30, 0.08);
+      --shadow-card: 0 24px 60px rgba(23, 32, 44, 0.12);
+      --shadow-lift: 0 14px 36px rgba(23, 32, 44, 0.1);
+      --font-body: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --gutter: max(20px, env(safe-area-inset-left, 0px));
+      --radius: 14px;
+      --radius-sm: 10px;
+      --maxw: 1120px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #0a0e14;
+        --surface: #11161f;
+        --surface-2: #18202c;
+        --line: rgba(255, 255, 255, 0.08);
+        --line-strong: rgba(255, 255, 255, 0.14);
+        --text: #e8edf4;
+        --muted: #8b98a9;
+        --faint: #5c6a7c;
+        --accent: #ff6b2c;
+        --accent-hover: #ff7d43;
+        --accent-soft: rgba(255, 107, 44, 0.12);
+        --accent-line: rgba(255, 107, 44, 0.4);
+        --accent-2: #ff9a62;
+        --accent-glow: rgba(255, 107, 44, 0.28);
+        --green: #3fb950;
+        --green-soft: rgba(63, 185, 80, 0.12);
+        --green-line: rgba(63, 185, 80, 0.3);
+        --blue: #58a6ff;
+        --blue-soft: rgba(88, 166, 255, 0.12);
+        --blue-line: rgba(88, 166, 255, 0.35);
+        --amber: #f0b429;
+        --amber-soft: rgba(240, 180, 41, 0.12);
+        --amber-line: rgba(240, 180, 41, 0.35);
+        --red: #f85149;
+        --header-bg: rgba(10, 14, 20, 0.82);
+        --glow-orange: rgba(255, 107, 44, 0.14);
+        --shadow-card: 0 30px 80px rgba(0, 0, 0, 0.5);
+        --shadow-lift: 0 18px 44px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0a0e14;
+      --surface: #11161f;
+      --surface-2: #18202c;
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.14);
+      --text: #e8edf4;
+      --muted: #8b98a9;
+      --faint: #5c6a7c;
+      --accent: #ff6b2c;
+      --accent-hover: #ff7d43;
+      --accent-soft: rgba(255, 107, 44, 0.12);
+      --accent-line: rgba(255, 107, 44, 0.4);
+      --accent-2: #ff9a62;
+      --accent-glow: rgba(255, 107, 44, 0.28);
+      --green: #3fb950;
+      --green-soft: rgba(63, 185, 80, 0.12);
+      --green-line: rgba(63, 185, 80, 0.3);
+      --blue: #58a6ff;
+      --blue-soft: rgba(88, 166, 255, 0.12);
+      --blue-line: rgba(88, 166, 255, 0.35);
+      --amber: #f0b429;
+      --amber-soft: rgba(240, 180, 41, 0.12);
+      --amber-line: rgba(240, 180, 41, 0.35);
+      --red: #f85149;
+      --header-bg: rgba(10, 14, 20, 0.82);
+      --glow-orange: rgba(255, 107, 44, 0.14);
+      --shadow-card: 0 30px 80px rgba(0, 0, 0, 0.5);
+      --shadow-lift: 0 18px 44px rgba(0, 0, 0, 0.4);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0 0 auto;
+      height: env(safe-area-inset-top, 0px);
+      z-index: 60;
+      background: var(--bg);
+    }
+
+    .container {
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding-left: var(--gutter);
+      padding-right: var(--gutter);
+    }
+
+    .mono, code { font-family: var(--font-mono); }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ::selection { background: var(--accent-soft); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+    /* Skip link */
+    .skip-link {
+      position: fixed;
+      left: 12px;
+      top: calc(env(safe-area-inset-top, 0px) + 12px);
+      z-index: 100;
+      background: var(--accent);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      transform: translateY(-220%);
+      transition: transform 0.2s ease;
+    }
+    .skip-link:focus { transform: translateY(0); text-decoration: none; }
+
+    /* Scroll progress */
+    .scroll-progress {
+      position: fixed;
+      top: env(safe-area-inset-top, 0px);
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      z-index: 55;
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* Header */
+    .site-header {
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      z-index: 50;
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+    .brand {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.02rem;
+      display: flex; align-items: center; gap: 10px;
+      color: var(--text);
+    }
+    .brand:hover { text-decoration: none; }
+    .brand .mark { flex-shrink: 0; filter: drop-shadow(0 0 6px var(--accent-glow)); }
+    .nav-links { display: flex; gap: 26px; list-style: none; align-items: center; }
+    .nav-links a { color: var(--muted); font-size: 0.92rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-links a.active { color: var(--text); }
+    .nav-cta {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+    .nav-links a.nav-cta, .nav-links a.nav-cta.active { color: #fff; }
+    .nav-links a.nav-cta:hover { background: var(--accent-hover); color: #fff; text-decoration: none; }
+    .nav-toggle { display: none; background: none; border: 1px solid var(--line); border-radius: 8px; color: var(--text); width: 40px; height: 40px; font-size: 1.2rem; cursor: pointer; }
+    .theme-toggle {
+      display: inline-grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .theme-toggle:hover { border-color: var(--line-strong); color: var(--accent); }
+    .theme-toggle svg { pointer-events: none; width: 18px; height: 18px; }
+
+    /* Hero */
+    .hero { padding: 88px 0 72px; position: relative; overflow: hidden; }
+    .hero::before {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 44px 44px;
+      -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 72%);
+      mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 72%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: ""; position: absolute; top: -160px; right: -120px;
+      width: 520px; height: 520px; border-radius: 50%;
+      background: radial-gradient(circle, var(--glow-orange) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: center; }
+    .kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--green);
+      background: var(--green-soft);
+      border: 1px solid var(--green-line);
+      border-radius: 999px; padding: 6px 14px; margin-bottom: 24px;
+    }
+    .kicker .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.8); } }
+    .hero h1 {
+      font-family: var(--font-mono);
+      font-size: clamp(1.9rem, 4.6vw, 3.15rem);
+      font-weight: 700; line-height: 1.14;
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+    }
+    .hero h1 .hl {
+      color: var(--accent);
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero .subtitle { margin-top: 20px; color: var(--muted); font-size: 1.09rem; max-width: 34em; }
+    .hero-cta { margin-top: 32px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 13px 22px; border-radius: var(--radius-sm);
+      font-weight: 600; font-size: 0.98rem;
+      border: 1px solid transparent; cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 28px var(--accent-glow); text-decoration: none; }
+    .btn-ghost { background: var(--surface); color: var(--text); border-color: var(--line-strong); }
+    .btn-ghost:hover { border-color: var(--accent-line); transform: translateY(-2px); text-decoration: none; }
+    .hero-note { margin-top: 18px; font-size: 0.86rem; color: var(--faint); font-family: var(--font-mono); }
+
+    /* Terminal card */
+    .terminal {
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      min-width: 0;
+    }
+    .terminal-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+    .terminal-bar .tb { width: 12px; height: 12px; border-radius: 50%; }
+    .tb-r { background: #ff5f57; } .tb-y { background: #febc2e; } .tb-g { background: #28c840; }
+    .terminal-title { margin-left: 8px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--faint); }
+    .terminal-body { padding: 22px 24px; font-family: var(--font-mono); font-size: 0.86rem; line-height: 1.75; min-height: 320px; overflow-x: auto; }
+    .term-line { display: block; white-space: nowrap; }
+    .term-prompt { color: var(--green); }
+    .term-cmd { color: var(--text); }
+    .term-out { color: var(--muted); }
+    .term-ok { color: var(--green); }
+    .term-hl { color: var(--blue); }
+    .term-warn { color: var(--amber); }
+    .term-accent { color: var(--accent); }
+    .term-error { color: var(--red); }
+    .term-cursor { display: inline-block; width: 8px; height: 15px; background: var(--accent); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* Stats */
+    .stats { border-block: 1px solid var(--line); background: var(--surface); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); }
+    .stat { background: var(--surface); padding: 28px 24px; text-align: center; }
+    .stat .num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; display: block; }
+    .stat .lbl { font-size: 0.85rem; color: var(--muted); margin-top: 4px; display: block; }
+    .stat .num.accent { color: var(--accent); }
+    .stat .num.green { color: var(--green); }
+
+    /* Sections */
+    section { padding: 52px 0; }
+    .section-head { max-width: 640px; margin-bottom: 32px; }
+    .section-head.center { margin-inline: auto; text-align: center; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; display: block; }
+    .section-title { font-family: var(--font-mono); font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; text-wrap: balance; }
+    .section-sub { color: var(--muted); margin-top: 14px; font-size: 1.04rem; }
+
+    /* Feature cards (tilt) */
+    .features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; perspective: 1200px; }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px;
+      transform-style: preserve-3d;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      min-width: 0;
+      will-change: transform;
+    }
+    .feature:hover { border-color: var(--line-strong); box-shadow: var(--shadow-lift); }
+    .feature .icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: grid; place-items: center;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-line);
+      margin-bottom: 18px;
+      transform: translateZ(24px);
+    }
+    .feature:nth-child(3n+2) .icon { background: var(--blue-soft); border-color: var(--blue-line); color: var(--blue); }
+    .feature:nth-child(3n) .icon { background: var(--green-soft); border-color: var(--green-line); color: var(--green); }
+    .feature h3 { font-family: var(--font-mono); font-size: 1.02rem; font-weight: 600; margin-bottom: 8px; transform: translateZ(16px); }
+    .feature p { color: var(--muted); font-size: 0.94rem; }
+    .feature code { font-size: 0.86em; color: var(--blue); background: var(--surface-2); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); }
+
+    /* Dashboard / profile switcher */
+    .dash-wrap { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+    .chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .chip {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    }
+    .chip:hover { border-color: var(--line-strong); color: var(--text); }
+    .chip.active { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+    .dash-card { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 28px; min-width: 0; }
+    .gauge-row { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+    .gauge { position: relative; width: 132px; height: 132px; }
+    .gauge svg { transform: rotate(-90deg); }
+    .gauge .val { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; }
+    .gauge .val small { font-size: 0.7rem; color: var(--muted); }
+    .dash-meta { flex: 1; min-width: 200px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .kpi { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; min-width: 0; }
+    .kpi .v { display: block; font-family: var(--font-mono); font-size: 0.92rem; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi .k { display: block; margin-top: 2px; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+    .kpi .v.ok { color: var(--green); }
+    .kpi .v.off { color: var(--faint); }
+    .kpi .v.warn { color: var(--amber); }
+    .kpi .v.accent { color: var(--accent); }
+
+    /* Playground */
+    .play-wrap { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+
+    .playground {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-width: 0;
+      box-shadow: 0 18px 40px rgba(13, 17, 23, 0.08);
+    }
+    .playground::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      opacity: 0.85;
+      z-index: 1;
+    }
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--line);
+      position: relative;
+    }
+    .tb { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+    .tb-r { background: #ff5f57; }
+    .tb-y { background: #febc2e; }
+    .tb-g { background: #28c840; }
+    .terminal-title {
+      margin-left: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .terminal-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--faint);
+      flex-shrink: 0;
+    }
+    .terminal-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); animation: pulse 1.6s ease-in-out infinite; }
+
+    .play-output {
+      position: relative;
+      padding: 22px 24px;
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      line-height: 1.85;
+      height: 380px;
+      overflow-y: auto;
+      background: var(--surface-2);
+      white-space: pre-wrap;
+      word-break: break-word;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-strong) transparent;
+      scroll-padding-block: 8px;
+    }
+    .play-output::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(127, 127, 127, 0.03) 3px, rgba(127, 127, 127, 0.03) 4px);
+    }
+    .play-output .pl-line { white-space: pre-wrap; }
+    .term-cursor { display: inline-block; width: 8px; height: 15px; background: var(--accent); vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+
+    .play-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      background: var(--surface);
+      padding: 13px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+    .play-input-row .prompt { color: var(--green); flex-shrink: 0; }
+    .play-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      min-width: 0;
+    }
+    .play-input::placeholder { color: var(--faint); }
+
+    .play-hint {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 12px 16px 14px;
+      background: var(--surface);
+      border-top: 1px solid var(--line);
+    }
+    .play-hint .hint-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin-right: 2px;
+    }
+    .hint-chip {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+    .hint-chip:hover { border-color: var(--accent-line); color: var(--accent); transform: translateY(-1px); }
+
+    .lib-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .lib-head { display: flex; align-items: center; gap: 10px; }
+    .lib-title { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    .lib-count {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-line);
+      border-radius: 999px;
+      padding: 2px 10px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .lib-search { position: relative; }
+    .lib-search svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--faint);
+      pointer-events: none;
+    }
+    .lib-search input {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px 9px 34px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .lib-search input:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .lib-search input::placeholder { color: var(--faint); }
+
+    .lib { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; counter-reset: lib; max-height: 470px; overflow-y: auto; padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+    .lib-group {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 6px 2px 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      grid-column: 1 / -1;
+    }
+    .lib-group::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .lib-item {
+      position: relative;
+      text-align: left;
+      font-family: var(--font-mono);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      cursor: pointer;
+      counter-increment: lib;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+      min-width: 0;
+    }
+    .lib-item:hover { border-color: var(--accent-line); background: var(--surface-2); transform: translateY(-1px); }
+    .lib-item.active { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent-soft); }
+    .lib-item .lc { display: block; font-size: 0.76rem; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lib-item .lc::before { content: counter(lib, decimal-leading-zero); color: var(--faint); font-weight: 600; margin-right: 8px; font-size: 0.68rem; }
+    .lib-item.active .lc::before { color: var(--accent); }
+    .lib-item .ld { display: block; font-size: 0.68rem; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lib-empty {
+      grid-column: 1 / -1;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--faint);
+      text-align: center;
+      padding: 18px 0;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Handoff demo */
+
+    .hx { max-width: 980px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-lift); }
+    .hx-cmd { font-family: var(--font-mono); font-size: 0.88rem; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px; }
+    .hx-cmd .p { color: var(--green); margin-right: 8px; }
+    .hx-cur { display: inline-block; width: 7px; height: 14px; background: var(--accent); vertical-align: text-bottom; margin-left: 3px; animation: blink 1s step-end infinite; }
+    .hx-grid { display: grid; grid-template-columns: minmax(0, 1fr) 110px minmax(0, 1fr); align-items: stretch; }
+    .hx-box { border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); padding: 16px; min-width: 0; transition: border-color 0.3s ease, background 0.3s ease; }
+    .hx-box.out { border-color: var(--amber-line); background: var(--amber-soft); }
+    .hx-box.live { border-color: var(--green-line); background: var(--green-soft); }
+    .hx-cap { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-bottom: 12px; }
+    .hx-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .hx-name { font-family: var(--font-mono); font-weight: 700; font-size: 1rem; }
+    .hx-pill, .hx-rb { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 3px 8px; border-radius: 99px; background: var(--green-soft); color: var(--green); border: 1px solid var(--green-line); white-space: nowrap; }
+    .hx-pill.warn { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-line); }
+    .hx-pill.limit, .hx-row[data-s="out"] .hx-rb { background: var(--amber-soft); color: var(--amber); border-color: var(--amber-line); }
+    .hx-row[data-s="logged"] .hx-rb { background: var(--surface); color: var(--faint); border-color: var(--line-strong); }
+    .hx-chat { margin: 14px 0; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.6; color: var(--muted); display: grid; gap: 6px; }
+    .hx-chat b { color: var(--accent); font-weight: 600; margin-right: 8px; }
+    .hx-count { color: var(--faint); font-size: 0.7rem; }
+    .hx-quota { height: 6px; background: var(--line-strong); border-radius: 99px; overflow: hidden; margin: 14px 0 8px; }
+    .hx-quota i { display: block; height: 100%; background: var(--green); border-radius: 99px; transition: width 0.6s ease, background 0.3s ease; }
+    .hx-quota i.hot { background: var(--amber); }
+    .hx-meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+    .hx-mid { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+    .hx-wire { position: relative; width: 100%; height: 0; border-top: 2px dashed var(--line-strong); }
+    .hx-dot { position: absolute; top: -7px; left: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); opacity: 0; transition: left 0.9s cubic-bezier(.5,0,.2,1), opacity 0.2s ease; }
+    .hx-midl { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); text-align: center; min-height: 1.2em; }
+    .hx-list { display: grid; gap: 8px; }
+    .hx-row { display: grid; grid-template-columns: 18px 1fr auto; grid-template-areas: "r n b" "r q q"; align-items: center; column-gap: 10px; row-gap: 2px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; cursor: pointer; font-family: var(--font-mono); color: var(--text); transition: border-color 0.15s ease, background 0.15s ease; }
+    .hx-row:hover { border-color: var(--accent-line); }
+    .hx-row.sel { border-color: var(--accent); background: var(--accent-soft); }
+    .hx-row.live { border-color: var(--green); background: var(--green-soft); }
+    .hx-radio { grid-area: r; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-strong); }
+    .hx-row.sel .hx-radio { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 40%, transparent 45%); }
+    .hx-row.live .hx-radio { border-color: var(--green); background: radial-gradient(circle, var(--green) 0 40%, transparent 45%); }
+    .hx-rn { grid-area: n; font-weight: 600; font-size: 0.88rem; }
+    .hx-rb { grid-area: b; }
+    .hx-rq { grid-area: q; font-size: 0.7rem; color: var(--faint); }
+    .hx-row:disabled { cursor: not-allowed; opacity: 0.6; }
+    .hx-steps { list-style: none; margin: 22px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; counter-reset: hx; }
+    .hx-steps li { counter-increment: hx; font-size: 0.78rem; color: var(--faint); border-top: 3px solid var(--line-strong); padding-top: 8px; transition: color 0.3s ease, border-color 0.3s ease; }
+    .hx-steps li::before { content: counter(hx) ". "; font-family: var(--font-mono); }
+    .hx-steps li.on { color: var(--text); border-color: var(--accent); }
+    .hx-steps li.done { color: var(--green); border-color: var(--green); }
+    .hx-foot { display: flex; align-items: center; gap: 18px; margin-top: 18px; flex-wrap: wrap; }
+    .hx-btn { flex: 0 0 auto; min-width: 180px; justify-content: center; }
+    .hx-status { flex: 1; min-width: 220px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+    .hx-status.done { color: var(--green); }
+    @media (max-width: 820px) {
+      .hx-grid { grid-template-columns: 1fr; }
+      .hx-mid { height: 70px; flex-direction: row; justify-content: center; gap: 12px; }
+      .hx-wire { width: 0; height: 100%; border-top: 0; border-left: 2px dashed var(--line-strong); }
+      .hx-dot { top: 0; left: -7px; transition: top 0.9s cubic-bezier(.5,0,.2,1), opacity 0.2s ease; }
+      .hx-steps { grid-template-columns: repeat(2, 1fr); }
+    }
+    /* Diagram */
+    .diagram-wrap { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 44px; align-items: center; }
+    .diagram { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 24px; }
+    .diagram svg { width: 100%; height: auto; display: block; }
+    .dg-node { cursor: pointer; }
+    .dg-node rect { transition: stroke 0.2s ease; }
+    .dg-node:hover rect, .dg-node.active rect { stroke: var(--accent); }
+    .dg-label { font-family: var(--font-mono); font-size: 13px; fill: var(--text); }
+    .dg-sub { font-family: var(--font-mono); font-size: 11px; fill: var(--muted); }
+    .dg-line { stroke: var(--line-strong); stroke-width: 2; }
+    .dg-line.lit { stroke: var(--accent); }
+    .diagram-note { font-size: 0.8rem; color: var(--faint); text-align: center; margin-top: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .diagram-meta { font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); margin-top: 14px; text-align: center; min-height: 2.6em; }
+
+    /* Matrix */
+    .matrix { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 24px; }
+    .matrix-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .mcell { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; cursor: pointer; transition: border-color 0.2s ease; min-width: 0; font-family: var(--font-mono); user-select: none; }
+    .mcell:hover { border-color: var(--line-strong); }
+    .mcell .mname { font-size: 0.82rem; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .mcell .mstatus { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    .mcell .mstatus .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .mcell .mtrail { display: block; margin-top: 8px; font-size: 0.72rem; color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mcell .mtok { display: block; margin-top: 6px; font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .mbar { margin-top: 10px; height: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+    .mfill { height: 100%; border-radius: 999px; background: var(--accent); }
+    .st-running .mfill { background: var(--green); }
+    .st-idle .mfill { background: var(--faint); }
+    .st-wait .mfill { background: var(--amber); }
+    .st-done .mfill { background: var(--blue); }
+    .st-running .dot { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); animation: pulse 1.8s ease-in-out infinite; }
+    .st-running .mstatus { color: var(--green); }
+    .st-idle .dot { background: var(--faint); }
+    .st-idle .mstatus { color: var(--faint); }
+    .st-wait .dot { background: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+    .st-wait .mstatus { color: var(--amber); }
+    .st-done .dot { background: var(--blue); }
+    .st-done .mstatus { color: var(--blue); }
+    .matrix-note { margin-top: 16px; font-size: 0.8rem; color: var(--faint); font-family: var(--font-mono); text-align: center; }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; }
+    .step .stepnum { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; margin-bottom: 16px; }
+    .step h3 { font-family: var(--font-mono); font-size: 1.02rem; font-weight: 600; margin-bottom: 8px; }
+    .step p { color: var(--muted); font-size: 0.94rem; }
+    .step code { color: var(--blue); font-size: 0.86em; }
+
+    /* Install */
+    .install-wrap { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 28px; align-items: start; max-width: 1000px; margin: 0 auto; }
+    .codeblock { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 16px; min-width: 0; }
+    .codeblock-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+    .codeblock-head .plat { font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .copy-btn { font-family: var(--font-mono); font-size: 0.76rem; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 4px 12px; cursor: pointer; transition: color 0.15s ease, border-color 0.15s ease; }
+    .copy-btn:hover { color: var(--text); border-color: var(--line-strong); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green-line); }
+    .codeblock pre { padding: 18px 20px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+    .codeblock .cmt { color: var(--faint); }
+
+    /* FAQ */
+    .faq-help { max-width: 820px; margin: 24px auto 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 20px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); font-size: 0.92rem; color: var(--muted); }
+    .faq-help b { color: var(--text); font-family: var(--font-mono); }
+    .faq { counter-reset: faq; max-width: 820px; margin: 0 auto; min-width: 0; }
+    .faq details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 12px; overflow: hidden; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+    .faq details:hover { border-color: var(--line-strong); }
+    .faq details[open] { border-color: var(--accent-line); box-shadow: 0 8px 24px var(--glow-orange); }
+    .faq summary { cursor: pointer; list-style: none; padding: 20px 24px; font-family: var(--font-mono); font-weight: 600; font-size: 0.97rem; display: flex; align-items: center; gap: 14px; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { counter-increment: faq; content: counter(faq, decimal-leading-zero); font-size: 0.72rem; color: var(--faint); font-weight: 600; }
+    .faq summary > * { min-width: 0; }
+    .faq details[open] summary::before { color: var(--accent); }
+    .faq summary::after { content: "+"; margin-left: auto; font-size: 1.1rem; line-height: 1; width: 1em; text-align: center; color: var(--accent); flex-shrink: 0; transition: transform 0.2s ease; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq .faq-body { padding: 0 24px 20px; color: var(--muted); font-size: 0.95rem; }
+    .faq code { font-size: 0.88em; color: var(--blue); background: var(--surface-2); padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); }
+
+    /* Ticker */
+    .ticker { border-top: 1px solid var(--line); background: var(--surface); padding: 14px 0; overflow: hidden; }
+    .ticker-inner { display: flex; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+    .ticker .live { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); animation: pulse 1.6s ease-in-out infinite; flex-shrink: 0; }
+    .ticker-line { transition: opacity 0.3s ease; }
+
+    /* CTA */
+    .cta-band { background: radial-gradient(ellipse at 50% -20%, var(--glow-orange), transparent 60%), var(--surface); border-block: 1px solid var(--line); text-align: center; }
+    .cta-band .section-title { margin-inline: auto; max-width: 24em; }
+    .cta-band .section-sub { margin-inline: auto; max-width: 34em; }
+    .cta-band .hero-cta { justify-content: center; }
+
+    /* Footer */
+    .site-footer { border-top: 1px solid var(--line); padding: 44px 0 60px; }
+    .footer-inner { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: center; color: var(--muted); font-size: 0.88rem; }
+    .footer-links { display: flex; gap: 22px; list-style: none; flex-wrap: wrap; }
+    .footer-links a { color: var(--muted); }
+    .footer-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* Reveal */
+
+    .pv-tabs { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .pv-tab { font-family: var(--font-mono); font-weight: 600; font-size: 0.86rem; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 16px; cursor: pointer; color: var(--text); display: grid; gap: 2px; text-align: left; transition: border-color 0.15s ease, background 0.15s ease; }
+    .pv-tab span { font-size: 0.7rem; font-weight: 500; color: var(--faint); }
+    .pv-tab:hover { border-color: var(--accent-line); }
+    .pv-tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .pv-panel[hidden] { display: none; }
+    .pv-dash { max-width: 720px; margin: 0 auto; }
+    .in-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .in-tab { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; padding: 6px 14px; cursor: pointer; color: var(--text); }
+    .in-tab:hover { border-color: var(--accent-line); }
+    .in-tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .in-block[hidden] { display: none; }
+    .in-tabs { align-items: center; min-height: 34px; }
+    .in-cap { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .install-wrap .codeblock { margin-bottom: 0; }
+    .install-wrap .codeblock pre { min-height: 8.4em; }
+    .in-note { color: var(--muted); font-size: 0.9rem; margin-top: 14px; }
+    /* Problem table, explorer, scenarios, security */
+    .prob { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; font-size: 0.92rem; }
+    .prob th, .prob td { text-align: left; vertical-align: top; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+    .prob tr:last-child td { border-bottom: 0; }
+    .prob th { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); background: var(--surface-2); }
+    .prob td:first-child { font-weight: 600; width: 22%; }
+    .prob td:nth-child(2) { color: var(--muted); width: 38%; }
+    .prob td:nth-child(3) code { color: var(--accent); font-size: 0.85em; }
+    .prob td:nth-child(3) { width: 40%; }
+    .tui { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lift); }
+    .tui-top { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 10px 16px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+    .tui-top .on { color: var(--green); }
+    .tui-body { display: grid; grid-template-columns: 0.8fr 1.2fr 1.2fr; font-family: var(--font-mono); font-size: 0.8rem; }
+    .tui-pane { padding: 16px 18px; border-right: 1px solid var(--line); min-width: 0; }
+    .tui-pane:last-child { border-right: 0; }
+    .tui-h { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; }
+    .tui-row { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 6px; padding: 7px 8px; color: var(--muted); cursor: pointer; font: inherit; }
+    .tui-row:hover { background: var(--surface-2); }
+    .tui-row.sel { background: var(--accent-soft); color: var(--text); }
+    .tui-row small { display: block; color: var(--faint); font-size: 0.72rem; margin-top: 2px; }
+    .tui-kv { display: grid; grid-template-columns: 5.2em 1fr; gap: 6px 10px; line-height: 1.5; }
+    .tui-kv dt { color: var(--faint); }
+    .tui-kv dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+    .tui-foot { padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface-2); font-family: var(--font-mono); font-size: 0.72rem; color: var(--faint); }
+    .tgauge { display: inline-block; width: 90px; height: 6px; background: var(--line-strong); border-radius: 99px; vertical-align: middle; margin-right: 8px; overflow: hidden; }
+    .tgauge i { display: block; height: 100%; background: var(--accent); }
+    .sc-wrap { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 24px; align-items: start; }
+    .sc-tabs { display: flex; flex-direction: column; gap: 8px; }
+    .sc-tab { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer; font-family: var(--font-body); color: var(--text); transition: border-color 0.15s ease, background 0.15s ease; }
+    .sc-tab:hover { border-color: var(--accent-line); }
+    .sc-tab[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); }
+    .sc-tab b { display: block; font-size: 0.95rem; }
+    .sc-tab span { display: block; font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+    .sc-panel { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); overflow: hidden; min-width: 0; }
+    .sc-code { margin: 0; padding: 18px 20px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.8; background: var(--surface-2); overflow-x: auto; white-space: pre; }
+    .sc-code .c { color: var(--faint); }
+    .sc-code .p { color: var(--green); }
+    .sc-steps { margin: 0; padding: 16px 20px 18px 38px; font-size: 0.9rem; color: var(--muted); }
+    .sc-steps li { margin: 4px 0; }
+    .sec-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+    .sec-box { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 20px; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.7; overflow-x: auto; }
+    .sec-box .tt { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; display: block; }
+    .sec-box pre { margin: 0; white-space: pre; }
+    .sec-box .a { color: var(--accent); }
+    .sec-box .g { color: var(--green); }
+    .sec-box .m { color: var(--faint); }
+    .sec-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; counter-reset: sec; }
+    .sec-list li { counter-increment: sec; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px 12px 44px; position: relative; font-size: 0.9rem; color: var(--muted); }
+    .sec-list li::before { content: counter(sec); position: absolute; left: 14px; top: 12px; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--accent); }
+    .sec-list b { color: var(--text); }
+    @media (max-width: 900px) {
+      .tui-body, .sc-wrap, .sec-grid, .sec-list { grid-template-columns: 1fr; }
+      .tui-pane { border-right: 0; border-bottom: 1px solid var(--line); }
+      .sc-tabs { flex-direction: row; overflow-x: auto; }
+      .sc-tab { min-width: 200px; }
+      .prob thead { display: none; }
+      .prob, .prob tbody, .prob tr, .prob td { display: block; width: 100% !important; }
+      .prob td { border-bottom: 0; padding: 6px 16px; }
+      .prob tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
+    }
+    .reveal { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s ease; }
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal { opacity: 0; transform: translateY(14px); }
+      .reveal.in { opacity: 1; transform: none; }
+      .feature { transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+    }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .hero-grid, .dash-wrap, .diagram-wrap, .install-wrap, .play-wrap { grid-template-columns: 1fr; gap: 40px; }
+      .features, .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .matrix-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .nav-links {
+        display: none;
+        position: absolute; top: 64px; left: 0; right: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--line);
+        flex-direction: column; gap: 0;
+        padding: 8px var(--gutter);
+        align-items: stretch;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links li { border-top: 1px solid var(--line); }
+      .nav-links a { display: block; padding: 14px 4px; }
+      .nav-toggle { display: inline-grid; place-items: center; }
+      section { padding: 40px 0; }
+      .features, .steps { grid-template-columns: 1fr; }
+      .terminal-body { padding: 18px 16px; font-size: 0.8rem; min-height: 280px; }
+      .stat { padding: 22px 16px; }
+      .stat .num { font-size: 1.5rem; }
+      .gauge-row { justify-content: center; }
+      .play-output { height: 320px; padding: 18px 18px; }
+      .lib { max-height: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="skip-link" href="#top">Skip to content</a>
+
+  <div class="scroll-progress" id="scroll-progress"></div>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <svg class="mark" viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
+          <rect x="1.5" y="3" width="17" height="14" rx="3.5" stroke="currentColor" stroke-width="1.6"></rect>
+          <circle cx="5" cy="6.4" r="1" fill="#ff5f57"></circle>
+          <circle cx="8" cy="6.4" r="1" fill="#febc2e"></circle>
+          <circle cx="11" cy="6.4" r="1" fill="#28c840"></circle>
+          <path d="M5 10.5h6M5 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          <rect x="12.5" y="9.6" width="2.6" height="4.6" rx="0.7" fill="var(--accent)"></rect>
+        </svg>
+        ClaudeSwap
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#handoff">Handoff</a></li>
+        <li><a href="#dashboard">Product</a></li>
+        <li><a href="#try">Try it</a></li>
+        <li><a href="#scenarios">Scenarios</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a class="nav-cta" href="#install">Install</a></li>
+      </ul>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle color theme">
+        <svg id="icon-sun" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="3.6"></circle><path d="M10 1.5v2.2M10 16.3v2.2M1.5 10h2.2M16.3 10h2.2M3.8 3.8l1.6 1.6M14.6 14.6l1.6 1.6M16.2 3.8l-1.6 1.6M5.4 14.6l-1.6 1.6"></path></svg>
+        <svg id="icon-moon" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 12.6A6.4 6.4 0 0 1 7.4 4.5 6.4 6.4 0 1 0 15.5 12.6Z"></path></svg>
+      </button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">☰</button>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="kicker"><span class="pulse"></span> Open source · Go · MIT</span>
+          <h1>Never stop a <span class="hl">Claude Code</span> session again.</h1>
+          <p class="subtitle">
+            ClaudeSwap switches your Claude Code profile when a quota or rate limit hits,
+            supervises every parallel session, and carries context across accounts.
+            Your credentials stay out of it.
+          </p>
+          <div class="hero-cta">
+            <a class="btn btn-primary" href="#install">Install ClaudeSwap</a>
+            <a class="btn btn-ghost" href="https://github.com/DeepakKewalramani/claudeswap" rel="noopener">GitHub ↗</a>
+          </div>
+          <p class="hero-note">claudeswap handoff personal &nbsp;//&nbsp; resumes in under 2s</p>
+        </div>
+
+        <div class="terminal" aria-label="ClaudeSwap terminal demo">
+          <div class="terminal-bar">
+            <span class="tb tb-r"></span><span class="tb tb-y"></span><span class="tb tb-g"></span>
+            <span class="terminal-title">claudeswap — demo</span>
+          </div>
+          <div class="terminal-body" id="hero-terminal"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat"><span class="num green" data-count="2" data-prefix="&lt;" data-suffix="s">1s</span><span class="lbl">Handoff time</span></div>
+          <div class="stat"><span class="num accent" data-count="20" data-suffix="+">0</span><span class="lbl">Sessions supervised</span></div>
+          <div class="stat"><span class="num" data-count="6">0</span><span class="lbl">Core capabilities</span></div>
+          <div class="stat"><span class="num green" data-count="0">0</span><span class="lbl">Credentials stored</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <!-- Problems -->
+    <section id="problem" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">The problem</span>
+          <h2 class="section-title">What changes when you run ClaudeSwap</h2>
+        </div>
+        <table class="prob">
+          <thead><tr><th>Challenge</th><th>Without ClaudeSwap</th><th>With ClaudeSwap</th></tr></thead>
+          <tbody>
+            <tr><td>Rate limit or quota exhaustion</td><td>Work stops for 4+ hours, or you log out, re-authenticate and lose a 50-turn conversation.</td><td><code>claudeswap handoff</code> resumes the exact conversation under another account in under 2 seconds.</td></tr>
+            <tr><td>Multi-repo parallel coding</td><td>5 terminal tabs, background agents stuck on hidden permission prompts, and <code>daemon.lock</code> conflicts.</td><td><code>claudeswap matrix</code> supervises 20+ parallel sessions with 1-click attach.</td></tr>
+            <tr><td>Scattered past sessions</td><td>Sessions buried in hashed folders under <code>~/.claude/projects/</code>.</td><td><code>claudeswap sessions</code> groups work by folder with token gauges and 1 to 9 tab switching.</td></tr>
+            <tr><td>Context fracturing</td><td>Each account starts with no memory of earlier architecture and file edits.</td><td><code>claudeswap context on</code> pools project memory and history without sharing credentials.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="features" class="reveal">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Why ClaudeSwap</span>
+          <h2 class="section-title">Built for developers who run multiple Claude accounts</h2>
+          <p class="section-sub">When one account hits its limit, the workflow should keep moving. ClaudeSwap is the layer between you and the manual login dance.</p>
+        </div>
+        <div class="features" id="feature-grid">
+          <div class="feature">
+            <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"></path></svg></div>
+            <h3>Instant switching</h3>
+            <p>Add each Claude account once. When you hit a limit, <code>handoff</code> resumes the exact conversation under another profile in under two seconds.</p>
+          </div>
+          <div class="feature">
+            <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></div>
+            <h3>Zero credential handling</h3>
+            <p>ClaudeSwap never reads, stores, intercepts, or logs tokens, cookies, passwords, or keychain secrets. Authentication stays native inside each profile.</p>
+          </div>
+          <div class="feature">
+            <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-9M10 21V4M16 21v-6M22 21V8"></path></svg></div>
+            <h3>Quota telemetry</h3>
+            <p>Watch live token use, cost, and status per profile in one place, so the next account choice is informed, not a guess.</p>
+          </div>
+          <div class="feature">
+            <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg></div>
+            <h3>Session explorer</h3>
+            <p>Every past session grouped by workspace, with token gauges and execution trails. Reopen any session in one keypress.</p>
+          </div>
+          <div class="feature">
+            <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></div>
+            <h3>Supervisor matrix</h3>
+            <p>A live matrix of up to 20+ background sessions across repositories. Attach, fork, kill, or check status in one place.</p>
+          </div>
+          <div class="feature">
+            <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 18a4 4 0 1 1 .6-7.96A5 5 0 0 1 17.2 9.5 3.5 3.5 0 0 1 17 16.5z"></path><path d="M12 13v5M9.5 15.5 12 18l2.5-2.5"></path></svg></div>
+            <h3>Shared memory</h3>
+            <p>Transcripts, project memory, and edit history pool across profiles when you turn <code>context</code> on. Handoffs keep the thread.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Handoff demo -->
+    <section id="handoff" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">The signature move</span>
+          <h2 class="section-title">Rate limit hit? Hand off, don't restart.</h2>
+          <p class="section-sub">One command moves the live conversation to another account, history intact. You choose the target: name it, or run <code>claudeswap handoff</code> alone and pick from your profiles. Account names here are examples; keep as many Claude logins as you like.</p>
+        </div>
+        <div class="hx" id="hx">
+          <div class="hx-cmd"><span class="p">$</span> claudeswap handoff <span id="hx-target-name">personal</span><span class="hx-cur" aria-hidden="true"></span></div>
+          <div class="hx-grid">
+            <div class="hx-from hx-box" id="hx-work">
+              <div class="hx-cap">Current session</div>
+              <div class="hx-top"><span class="hx-name">work</span><span class="hx-pill warn" id="hx-work-pill">running</span></div>
+              <div class="hx-chat">
+                <div><b>you</b> refactor the auth middleware</div>
+                <div><b>claude</b> Updated middleware/auth.go, running tests...</div>
+                <div class="hx-count">312 messages · 41 files</div>
+              </div>
+              <div class="hx-quota"><i id="hx-work-bar" style="width:92%"></i></div>
+              <div class="hx-meta" id="hx-work-note">92% of window used</div>
+            </div>
+            <div class="hx-mid" aria-hidden="true">
+              <div class="hx-wire"><i class="hx-dot" id="hx-dot"></i></div>
+              <span class="hx-midl" id="hx-midl">--resume</span>
+            </div>
+            <div class="hx-to hx-box" id="hx-to">
+              <div class="hx-cap">Hand off to (pick one)</div>
+              <div class="hx-list" id="hx-targets" role="radiogroup" aria-label="Hand off to">
+                <button type="button" class="hx-row sel" role="radio" aria-checked="true" data-t="personal" data-s="ready"><span class="hx-radio"></span><span class="hx-rn">personal</span><span class="hx-rb">ready</span><span class="hx-rq">12% used</span></button>
+                <button type="button" class="hx-row" role="radio" aria-checked="false" data-t="consulting" data-s="ready"><span class="hx-radio"></span><span class="hx-rn">consulting</span><span class="hx-rb">ready</span><span class="hx-rq">31% used</span></button>
+                <button type="button" class="hx-row" role="radio" aria-checked="false" data-t="team" data-s="out"><span class="hx-radio"></span><span class="hx-rn">team</span><span class="hx-rb">session out</span><span class="hx-rq">limit hit</span></button>
+                <button type="button" class="hx-row" role="radio" aria-checked="false" data-t="backup" data-s="logged"><span class="hx-radio"></span><span class="hx-rn">backup</span><span class="hx-rb">logged out</span><span class="hx-rq">needs login</span></button>
+              </div>
+            </div>
+          </div>
+          <ol class="hx-steps" id="hx-steps">
+            <li>Limit reached</li>
+            <li>Sync transcript</li>
+            <li>Launch with --resume</li>
+            <li>Resumed</li>
+          </ol>
+          <div class="hx-foot">
+            <button class="btn btn-primary hx-btn" id="hx-btn">Run handoff →</button>
+            <div class="hx-status" id="hx-status" aria-live="polite">Pick an account, then run the handoff.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inside a handoff -->
+    <section id="inside" class="reveal">
+      <div class="container diagram-wrap">
+        <div class="diagram">
+          <svg viewBox="0 0 560 270" role="img" aria-label="Four profiles sharing one context pool">
+            <line class="dg-line" data-for="work" x1="160" y1="56" x2="215" y2="118"></line>
+            <line class="dg-line" data-for="personal" x1="400" y1="56" x2="345" y2="118"></line>
+            <line class="dg-line" data-for="consulting" x1="160" y1="214" x2="215" y2="152"></line>
+            <line class="dg-line" data-for="team" x1="400" y1="214" x2="345" y2="152"></line>
+
+            <g class="dg-node" data-node="work" tabindex="0" role="button" aria-label="Work profile">
+              <rect x="30" y="30" width="130" height="52" rx="12" fill="var(--surface-2)" stroke="var(--line-strong)" stroke-width="1.5"></rect>
+              <text class="dg-label" x="95" y="53" text-anchor="middle">work</text>
+              <text class="dg-sub" x="95" y="70" text-anchor="middle">own login</text>
+            </g>
+            <g class="dg-node" data-node="personal" tabindex="0" role="button" aria-label="Personal profile">
+              <rect x="400" y="30" width="130" height="52" rx="12" fill="var(--surface-2)" stroke="var(--line-strong)" stroke-width="1.5"></rect>
+              <text class="dg-label" x="465" y="53" text-anchor="middle">personal</text>
+              <text class="dg-sub" x="465" y="70" text-anchor="middle">own login</text>
+            </g>
+            <g class="dg-node" data-node="consulting" tabindex="0" role="button" aria-label="Consulting profile">
+              <rect x="30" y="188" width="130" height="52" rx="12" fill="var(--surface-2)" stroke="var(--line-strong)" stroke-width="1.5"></rect>
+              <text class="dg-label" x="95" y="211" text-anchor="middle">consulting</text>
+              <text class="dg-sub" x="95" y="228" text-anchor="middle">own login</text>
+            </g>
+            <g class="dg-node" data-node="team" tabindex="0" role="button" aria-label="Team profile">
+              <rect x="400" y="188" width="130" height="52" rx="12" fill="var(--surface-2)" stroke="var(--line-strong)" stroke-width="1.5"></rect>
+              <text class="dg-label" x="465" y="211" text-anchor="middle">team</text>
+              <text class="dg-sub" x="465" y="228" text-anchor="middle">own login</text>
+            </g>
+
+            <g class="dg-node" data-node="memory" tabindex="0" role="button" aria-label="Shared context pool">
+              <rect x="205" y="105" width="150" height="60" rx="14" fill="var(--accent-soft)" stroke="var(--accent-line)" stroke-width="1.5"></rect>
+              <text class="dg-label" x="280" y="132" text-anchor="middle">shared context</text>
+              <text class="dg-sub" x="280" y="150" text-anchor="middle">transcripts, memory</text>
+            </g>
+            <text class="dg-sub" x="280" y="190" text-anchor="middle">no credentials</text>
+          </svg>
+          <div class="diagram-meta" id="diagram-meta" aria-live="polite">Click a node to inspect it, or run the handoff above.</div>
+          <div class="diagram-note">Any number of profiles can share one pool. Each keeps its own login, and handoff works between any two.</div>
+        </div>
+        <div class="section-head" style="margin-bottom:0">
+          <span class="eyebrow">Inside a handoff</span>
+          <h2 class="section-title">How context survives the switch</h2>
+          <p class="section-sub">
+            When you run <code>handoff</code>, ClaudeSwap syncs the transcript to the shared memory pool, then launches the new profile with <code>--resume</code>.
+            Credentials never cross the pool.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Product views -->
+    <section id="dashboard" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">The product</span>
+          <h2 class="section-title">Profiles, sessions and supervision</h2>
+          <p class="section-sub">The same screens you get in the terminal. All data here is example data, not live.</p>
+        </div>
+        <div class="pv-tabs" role="tablist" aria-label="Product views">
+          <button class="pv-tab" role="tab" aria-selected="true" data-i="0">Dashboard<span>claudeswap list</span></button>
+          <button class="pv-tab" role="tab" aria-selected="false" data-i="1">Session explorer<span>claudeswap sessions</span></button>
+          <button class="pv-tab" role="tab" aria-selected="false" data-i="2">Supervisor matrix<span>claudeswap matrix</span></button>
+        </div>
+        <div class="pv-panel" role="tabpanel" data-i="0"><div class="pv-dash"><div class="dash-card">
+          <div class="chips" id="profile-chips" role="tablist" aria-label="Profiles">
+            <button class="chip active" data-profile="work" role="tab" aria-selected="true">work</button>
+            <button class="chip" data-profile="personal" role="tab" aria-selected="false">personal</button>
+            <button class="chip" data-profile="consulting" role="tab" aria-selected="false">consulting</button>
+          </div>
+          <div class="gauge-row">
+            <div class="gauge" id="gauge" role="img" aria-label="Token usage gauge">
+              <svg width="132" height="132" viewBox="0 0 132 132">
+                <circle cx="66" cy="66" r="54" fill="none" stroke="var(--surface-2)" stroke-width="12"></circle>
+                <circle id="gauge-ring" cx="66" cy="66" r="54" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="339.29" stroke-dashoffset="339.29"></circle>
+              </svg>
+              <div class="val"><span id="gauge-val">0%</span></div>
+            </div>
+            <div class="dash-meta" id="dash-meta">
+              <div class="kpi"><span class="v" id="m-profile">work</span><span class="k">profile</span></div>
+              <div class="kpi"><span class="v ok" id="m-state">ready</span><span class="k">state</span></div>
+              <div class="kpi"><span class="v" id="m-tokens">42,150 / 100k</span><span class="k">tokens used</span></div>
+              <div class="kpi"><span class="v" id="m-speed">58 tok/s</span><span class="k">speed</span></div>
+              <div class="kpi"><span class="v" id="m-cost">$0.14</span><span class="k">session cost</span></div>
+            </div>
+          </div>
+        </div></div></div>
+        <div class="pv-panel" role="tabpanel" data-i="1" hidden><div class="tui" id="tui">
+          <div class="tui-top"><span>ClaudeSwap Explorer</span><span>Profile: Work <span class="on">(Ready)</span></span><span>Memory: ON</span></div>
+          <div class="tui-body">
+            <div class="tui-pane">
+              <div class="tui-h">Workspaces (4)</div>
+              <button class="tui-row sel" type="button">payment-service <small>3 sessions</small></button>
+              <button class="tui-row" type="button">web-dashboard <small>2 sessions</small></button>
+              <button class="tui-row" type="button">worker-daemon <small>1 session</small></button>
+              <button class="tui-row" type="button">mobile-client <small>0 sessions</small></button>
+            </div>
+            <div class="tui-pane" id="tui-sessions">
+              <div class="tui-h">Sessions (3)</div>
+              <button class="tui-row sel" type="button" data-i="0">refactor: auth middleware <small>2m ago · 4 turns · 42k tok</small></button>
+              <button class="tui-row" type="button" data-i="1">feat: stripe webhooks <small>1h ago · 12 turns · 88k tok</small></button>
+              <button class="tui-row" type="button" data-i="2">fix: connection timeout <small>yesterday · 6 turns · 18k tok</small></button>
+            </div>
+            <div class="tui-pane">
+              <div class="tui-h">Telemetry inspector</div>
+              <dl class="tui-kv" id="tui-kv"></dl>
+            </div>
+          </div>
+          <div class="tui-foot">Tab switch pane · Up/Down navigate · Enter open · f fork · s cycle profile · m toggle memory · q exit</div>
+        </div></div>
+        <div class="pv-panel" role="tabpanel" data-i="2" hidden><div class="matrix">
+          <div class="matrix-grid" id="matrix-grid">
+            <div class="mcell st-running"><span class="mname">payment-service</span><span class="mstatus"><span class="dot"></span> Running</span><span class="mtrail">running unit tests...</span><span class="mtok">42k tok · 42%</span><div class="mbar"><div class="mfill" style="width:42%"></div></div></div>
+            <div class="mcell st-idle"><span class="mname">web-dashboard</span><span class="mstatus"><span class="dot"></span> Idle</span><span class="mtrail">awaiting user prompt</span><span class="mtok">18k tok · 18%</span><div class="mbar"><div class="mfill" style="width:18%"></div></div></div>
+            <div class="mcell st-wait"><span class="mname">worker-daemon</span><span class="mstatus"><span class="dot"></span> Waiting</span><span class="mtrail">needs Bash permission</span><span class="mtok">78k tok · 78%</span><div class="mbar"><div class="mfill" style="width:78%"></div></div></div>
+            <div class="mcell st-done"><span class="mname">mobile-client</span><span class="mstatus"><span class="dot"></span> Completed</span><span class="mtrail">finished in 4m 12s</span><span class="mtok">110k tok · max</span><div class="mbar"><div class="mfill" style="width:100%"></div></div></div>
+          </div>
+          <p class="matrix-note">Example sessions · claudeswap matrix</p>
+        </div></div>
+      </div>
+    </section>
+
+
+    <!-- Playground -->
+
+
+    <section id="try" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Try it live</span>
+          <h2 class="section-title">Interactive Terminal Sandbox</h2>
+          <p class="section-sub">Test the real CLI commands in a safe sandbox. Type your own, or click any command in the reference to watch it run live.</p>
+        </div>
+        <div class="play-wrap">
+          <div class="playground">
+            <div class="terminal-bar">
+              <span class="tb tb-r"></span><span class="tb tb-y"></span><span class="tb tb-g"></span>
+              <span class="terminal-title">zsh — claudeswap sandbox</span>
+              <span class="terminal-status"><span class="dot"></span>demo</span>
+            </div>
+            <div class="play-output" id="play-output" role="log" aria-live="polite" tabindex="0"></div>
+            <div class="play-input-row">
+              <span class="prompt">$</span>
+              <input class="play-input" id="play-input" type="text" autocomplete="off" spellcheck="false" placeholder="try 'claudeswap list' or 'help'" aria-label="Terminal command input">
+            </div>
+            <div class="play-hint" id="play-hint">
+              <span class="hint-label">Quick</span>
+              <button class="hint-chip" data-cmd="claudeswap">claudeswap</button>
+              <button class="hint-chip" data-cmd="claudeswap list">list</button>
+              <button class="hint-chip" data-cmd="claudeswap status work">status work</button>
+              <button class="hint-chip" data-cmd="claudeswap handoff personal">handoff personal</button>
+              <button class="hint-chip" data-cmd="claudeswap matrix">matrix</button>
+              <button class="hint-chip" data-cmd="claudeswap agents">agents</button>
+              <button class="hint-chip" data-cmd="claudeswap chat export">chat export</button>
+              <button class="hint-chip" data-cmd="clear">clear</button>
+            </div>
+          </div>
+          <div class="lib-side">
+            <div class="lib-head">
+              <div class="lib-title">Command Reference</div>
+              <span class="lib-count" id="lib-count">18 / 18</span>
+            </div>
+            <div class="lib-search">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+              <input id="lib-filter" type="search" autocomplete="off" spellcheck="false" placeholder="Filter commands…" aria-label="Filter commands">
+            </div>
+            <div class="lib">
+            <div class="lib-group">Profiles</div>
+            <button class="lib-item" data-cmd="claudeswap"><span class="lc">claudeswap</span><span class="ld">Interactive menu &amp; version</span></button>
+            <button class="lib-item" data-cmd="claudeswap add personal"><span class="lc">claudeswap add &lt;name&gt;</span><span class="ld">Register a new profile + shortcuts</span></button>
+            <button class="lib-item" data-cmd="claudeswap list"><span class="lc">claudeswap list</span><span class="ld">List profiles &amp; quota status</span></button>
+            <button class="lib-item" data-cmd="claudeswap status work"><span class="lc">claudeswap status [profile]</span><span class="ld">Inspect tokens &amp; directory health</span></button>
+            <button class="lib-item" data-cmd="claudeswap set-default work"><span class="lc">claudeswap set-default &lt;profile&gt;</span><span class="ld">Set default profile for launches</span></button>
+            <button class="lib-item" data-cmd="claudeswap rename work personal"><span class="lc">claudeswap rename &lt;old&gt; &lt;new&gt;</span><span class="ld">Rename profile, update launcher</span></button>
+            <button class="lib-item" data-cmd="claudeswap remove consulting"><span class="lc">claudeswap remove &lt;profile&gt;</span><span class="ld">Remove a profile (config optional)</span></button>
+            <button class="lib-item" data-cmd="claudeswap launch personal --continue"><span class="lc">claudeswap launch &lt;profile&gt; [flags]</span><span class="ld">Launch Claude Code isolated</span></button>
+            <div class="lib-group">Sessions &amp; supervision</div>
+            <button class="lib-item" data-cmd="claudeswap handoff personal"><span class="lc">claudeswap handoff [profile]</span><span class="ld">Transfer live session with context</span></button>
+            <button class="lib-item" data-cmd="claudeswap sessions"><span class="lc">claudeswap sessions</span><span class="ld">Explorer &amp; telemetry HUD</span></button>
+            <button class="lib-item" data-cmd="claudeswap matrix"><span class="lc">claudeswap matrix</span><span class="ld">Supervise parallel sessions</span></button>
+            <button class="lib-item" data-cmd="claudeswap agents"><span class="lc">claudeswap agents [flags]</span><span class="ld">Inspect / attach / stop agents</span></button>
+            <div class="lib-group">Memory &amp; chat</div>
+            <button class="lib-item" data-cmd="claudeswap context on"><span class="lc">claudeswap context [on|off|status]</span><span class="ld">Unified memory across profiles</span></button>
+            <button class="lib-item" data-cmd="claudeswap chat export"><span class="lc">claudeswap chat export [profile]</span><span class="ld">Export chats to archive / markdown</span></button>
+            <button class="lib-item" data-cmd="claudeswap chat import"><span class="lc">claudeswap chat import &lt;archive&gt;</span><span class="ld">Import conversation sessions</span></button>
+            <button class="lib-item" data-cmd="claudeswap chat list"><span class="lc">claudeswap chat list [profile]</span><span class="ld">List active &amp; past logs</span></button>
+            <div class="lib-group">System</div>
+            <button class="lib-item" data-cmd="claudeswap doctor"><span class="lc">claudeswap doctor</span><span class="ld">Health check (binary, shell setup)</span></button>
+            <button class="lib-item" data-cmd="claudeswap version"><span class="lc">claudeswap version</span><span class="ld">Show current version</span></button>
+            <div class="lib-empty" id="lib-empty" hidden>No commands match your filter.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scenarios -->
+    <section id="scenarios" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Real-world use</span>
+          <h2 class="section-title">Five situations, five commands</h2>
+        </div>
+        <div class="sc-wrap">
+          <div class="sc-tabs" role="tablist" aria-label="Scenarios">
+            <button class="sc-tab" role="tab" aria-selected="true" data-i="0"><b>Mid-sprint limit handoff</b><span>Hit the hourly cap 60 turns in</span></button>
+            <button class="sc-tab" role="tab" aria-selected="false" data-i="1"><b>Supervise multiple repos</b><span>Several microservices at once</span></button>
+            <button class="sc-tab" role="tab" aria-selected="false" data-i="2"><b>Shared memory or isolation</b><span>Solo work vs client work under NDA</span></button>
+            <button class="sc-tab" role="tab" aria-selected="false" data-i="3"><b>Direct shortcuts</b><span>One launcher per profile</span></button>
+            <button class="sc-tab" role="tab" aria-selected="false" data-i="4"><b>Backup and export chats</b><span>Archive or Markdown notes</span></button>
+          </div>
+          <div class="sc-panel" role="tabpanel">
+            <pre class="sc-code" id="sc-code"></pre>
+            <ol class="sc-steps" id="sc-steps"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security -->
+    <section id="security" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Security architecture</span>
+          <h2 class="section-title">An environment coordinator, never an auth agent</h2>
+          <p class="section-sub">ClaudeSwap points Claude Code at an isolated folder with <code>CLAUDE_CONFIG_DIR</code>. Login, tokens and keychain stay inside Claude Code. It runs fully local and sends nothing to external servers.</p>
+        </div>
+        <div class="sec-grid">
+          <div class="sec-box">
+            <span class="tt">Who owns what</span>
+<pre><span class="a">ClaudeSwap</span>
+  profile registry    ~/.claudeswap/profiles.json
+  isolated dirs       ~/.claudeswap/profiles/&lt;id&gt;/
+  shortcuts           ~/.claudeswap/bin/
+  shared context      ~/.claudeswap/shared/
+        |
+        | injects CLAUDE_CONFIG_DIR
+        v
+<span class="g">Claude Code</span>
+  native OAuth handshake and token storage
+  local secrets (.claude.json)
+  LLM interaction and agent tools</pre>
+          </div>
+          <div class="sec-box">
+            <span class="tt">Filesystem layout</span>
+<pre>~/.claudeswap/
+  config.json         <span class="m"># mode 0600</span>
+  profiles.json       <span class="m"># mode 0600</span>
+  shared/             <span class="m"># unified context pool</span>
+    sessions/  projects/  file-history/  plans/
+    history.jsonl
+  profiles/           <span class="m"># CLAUDE_CONFIG_DIR targets</span>
+    work/  personal/
+  bin/                <span class="m"># generated shortcuts</span>
+  backups/            <span class="m"># atomic .bak copies</span></pre>
+          </div>
+        </div>
+        <ol class="sec-list" style="margin-top:24px">
+          <li><b>Zero credential touch.</b> It never parses, opens or logs OAuth tokens, cookies or secrets. Switching is done only through <code>CLAUDE_CONFIG_DIR</code>.</li>
+          <li><b>Zip-slip and path traversal immunity.</b> <code>chat import</code> validates canonical paths and rejects <code>..</code>, absolute paths and escapes from the target folder.</li>
+          <li><b>No shell injection.</b> <code>claude</code> is started with a direct argv slice, never through <code>bash -c</code> or <code>sh -c</code>.</li>
+          <li><b>Race-free concurrency.</b> Shared memory, session scanning and supervisor state are thread-safe and tested with <code>go test -race ./...</code>.</li>
+          <li><b>Atomic storage with self-healing.</b> Metadata is written to a temp file and renamed, with an automatic <code>.bak</code> restore on corruption.</li>
+          <li><b>Strict permissions.</b> Folders are <code>0700</code> and config files <code>0600</code>, readable only by the current OS user.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Install -->
+    <section id="install" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">Install</span>
+          <h2 class="section-title">Up and running in one line</h2>
+          <p class="section-sub">macOS, Linux, and Windows. Copy the block for your platform.</p>
+        </div>
+        <div class="install-wrap">
+          <div>
+            <div class="in-tabs" role="tablist" aria-label="Install method"><button class="in-tab" role="tab" aria-selected="true" data-i="0">macOS &amp; Linux</button><button class="in-tab" role="tab" aria-selected="false" data-i="1">Go</button><button class="in-tab" role="tab" aria-selected="false" data-i="2">Windows</button><button class="in-tab" role="tab" aria-selected="false" data-i="3">From source</button></div>
+            <div class="codeblock in-block" data-i="0">
+              <div class="codeblock-head"><span class="plat">macOS &amp; Linux</span><button class="copy-btn" data-copy="curl -fsSL https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.sh | sh">Copy</button></div>
+              <pre><span class="cmt"># quick install</span>
+curl -fsSL https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.sh | sh</pre>
+            </div>
+            <div class="codeblock in-block" data-i="1" hidden>
+              <div class="codeblock-head"><span class="plat">Any platform (Go)</span><button class="copy-btn" data-copy="go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest">Copy</button></div>
+              <pre><span class="cmt"># requires Go 1.22+</span>
+go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest</pre>
+            </div>
+            <div class="codeblock in-block" data-i="2" hidden>
+              <div class="codeblock-head"><span class="plat">Windows PowerShell</span><button class="copy-btn" data-copy="irm https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.ps1 | iex">Copy</button></div>
+              <pre><span class="cmt"># PowerShell</span>
+irm https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.ps1 | iex</pre>
+            </div>
+            <div class="codeblock in-block" data-i="3" hidden>
+              <div class="codeblock-head"><span class="plat">From source</span><button class="copy-btn" data-copy="git clone https://github.com/DeepakKewalramani/claudeswap.git && cd claudeswap && make install">Copy</button></div>
+              <pre><span class="cmt"># build from source</span>
+git clone https://github.com/DeepakKewalramani/claudeswap.git
+cd claudeswap && make install</pre>
+            </div>
+          </div>
+          <div>
+            <div class="in-tabs in-cap">Then configure</div>
+            <div class="codeblock" style="border-color: var(--accent-line)">
+              <div class="codeblock-head"><span class="plat" style="color:var(--accent)">Shell setup</span></div>
+              <pre><span class="cmt"># shell completion &amp; shortcuts</span>
+claudeswap doctor --install-shell
+claudeswap shortcut work
+source ~/.zshrc   <span class="cmt"># or ~/.bashrc</span></pre>
+            </div>
+            <p class="in-note">
+              Every command is verified against the latest release. See the
+              <a href="https://github.com/DeepakKewalramani/claudeswap/blob/main/README.md" rel="noopener">README</a>
+              for the full reference.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="reveal">
+      <div class="container">
+        <div class="section-head center">
+          <span class="eyebrow">FAQ</span>
+          <h2 class="section-title">Frequently asked questions</h2>
+          <p class="section-sub">Short answers about switching accounts, limits, memory and security.</p>
+        </div>
+        <div class="faq">
+          <details open>
+            <summary>How do I switch between multiple Claude Code accounts?</summary>
+            <div class="faq-body">Install ClaudeSwap, add each profile with <code>claudeswap add &lt;name&gt;</code>, then switch instantly with <code>claudeswap handoff &lt;name&gt;</code>. No logging out or re-authenticating.</div>
+          </details>
+          <details>
+            <summary>Can ClaudeSwap help when I hit a Claude rate limit or quota?</summary>
+            <div class="faq-body">Yes. When Claude Code reports a rate limit, run <code>claudeswap handoff &lt;other-account&gt;</code> to resume the exact same conversation under another account in under two seconds.</div>
+          </details>
+          <details>
+              <summary>Which account does a handoff go to when I have several?</summary>
+              <div class="faq-body">You choose. <code>claudeswap handoff consulting</code> goes to exactly that profile. Run <code>claudeswap handoff</code> with no name and a picker lists your other profiles with a status (Ready, Session out or Logged out). Nothing picks the next account for you.</div>
+            </details>
+          <details>
+            <summary>Does ClaudeSwap store my Claude API keys or tokens?</summary>
+            <div class="faq-body">No. ClaudeSwap never reads, stores, intercepts, or logs tokens, OAuth cookies, passwords, or keychain secrets. Authentication stays 100% native inside each Claude Code profile.</div>
+          </details>
+          <details>
+            <summary>Does context carry over when I switch accounts?</summary>
+            <div class="faq-body">With <code>claudeswap context on</code>, shared memory pools transferable project context, transcripts, and file edit history across profiles without sharing credentials.</div>
+          </details>
+          <details>
+            <summary>Can I run multiple Claude Code sessions at once?</summary>
+            <div class="faq-body">Yes. The <code>claudeswap matrix</code> command supervises 20+ parallel background sessions across repositories with live status, token use, and one-click attach or fork.</div>
+          </details>
+          <details>
+              <summary>How do I avoid daemon.lock conflicts with multiple sessions?</summary>
+              <div class="faq-body">Fork the session instead of attaching to a locked one: <code>claudeswap sessions resume &lt;session-id&gt; --fork</code>. In the <code>sessions</code> or <code>matrix</code> screens, press <code>f</code> to auto-branch with Claude Code's <code>--fork-session</code> flag.</div>
+            </details>
+          <details>
+              <summary>How does ClaudeSwap isolate profiles under the hood?</summary>
+              <div class="faq-body">Claude Code reads the <code>CLAUDE_CONFIG_DIR</code> environment variable. ClaudeSwap gives each profile its own folder (<code>~/.claudeswap/profiles/&lt;id&gt;</code>) with separate login, settings and cache, so profiles can also run in separate terminals at the same time.</div>
+            </details>
+          <details>
+            <summary>How do I install ClaudeSwap?</summary>
+            <div class="faq-body">On macOS and Linux run: <code>curl -fsSL https://raw.githubusercontent.com/DeepakKewalramani/claudeswap/main/install.sh | sh</code>. Or install with Go: <code>go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest</code>.</div>
+          </details>
+        </div>
+        <div class="faq-help">
+          <span><b>Still stuck?</b> Read the full README or open an issue on GitHub.</span>
+          <a class="btn btn-ghost" href="https://github.com/DeepakKewalramani/claudeswap/issues" rel="noopener">Open an issue ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-band reveal">
+      <div class="container">
+        <span class="eyebrow">Ready when you are</span>
+        <h2 class="section-title">Keep coding. ClaudeSwap handles the accounts.</h2>
+        <p class="section-sub">Free, open source, and zero credential risk. Install it, add your profiles, and never let a quota end your flow again.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#install">Install ClaudeSwap</a>
+          <a class="btn btn-ghost" href="https://github.com/DeepakKewalramani/claudeswap" rel="noopener">Star on GitHub ↗</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Ticker -->
+  <div class="ticker">
+    <div class="container ticker-inner">
+      <span class="live"></span>
+      <span class="ticker-line" id="ticker-line">telemetry · session a8f10b2c active · 42,150 tok</span>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div>ClaudeSwap © 2026 Deepak Kewalramani · MIT License</div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/DeepakKewalramani/claudeswap" rel="noopener">GitHub</a></li>
+        <li><a href="https://github.com/DeepakKewalramani/claudeswap/issues" rel="noopener">Issues</a></li>
+        <li><a href="https://github.com/DeepakKewalramani/claudeswap/blob/main/LICENSE" rel="noopener">License</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* ---------- Theme ---------- */
+      /* Default is light. Dark applies only when the visitor explicitly toggles it. */
+      var rootEl = document.documentElement;
+      var themeBtn = document.getElementById("theme-toggle");
+      var sunIcon = document.getElementById("icon-sun");
+      var moonIcon = document.getElementById("icon-moon");
+      function effectiveTheme() {
+        var t = rootEl.getAttribute("data-theme");
+        return (t === "light" || t === "dark") ? t : "light";
+      }
+      function renderThemeIcon() {
+        var dark = effectiveTheme() === "dark";
+        /* Icon shows the theme a click switches to: moon in light mode, sun in dark mode. */
+        /* SVG elements have no .hidden property, so toggle display directly. */
+        if (sunIcon) sunIcon.style.display = dark ? "block" : "none";
+        if (moonIcon) moonIcon.style.display = dark ? "none" : "block";
+        if (themeBtn) {
+          themeBtn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+          themeBtn.setAttribute("title", dark ? "Switch to light theme" : "Switch to dark theme");
+        }
+      }
+      function setTheme(t, persist) {
+        if (t === "light" || t === "dark") rootEl.setAttribute("data-theme", t);
+        if (persist !== false) {
+          try { localStorage.setItem("claudeswap-theme", t); } catch (e) { /* private mode */ }
+        }
+        renderThemeIcon();
+      }
+      if (themeBtn) {
+        var storedTheme = null;
+        try { storedTheme = localStorage.getItem("claudeswap-theme"); } catch (e) { /* ignore */ }
+        if (storedTheme === "light" || storedTheme === "dark") setTheme(storedTheme);
+        else setTheme("light", false);
+        themeBtn.addEventListener("click", function () {
+          setTheme(effectiveTheme() === "dark" ? "light" : "dark");
+        });
+      }
+
+      function escapeHtml(s) {
+        return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      }
+
+      /* ---------- Scroll progress ---------- */
+      var sp = document.getElementById("scroll-progress");
+      function updateProgress() {
+        var h = document.documentElement;
+        var max = h.scrollHeight - h.clientHeight;
+        sp.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + "%";
+      }
+      window.addEventListener("scroll", updateProgress, { passive: true });
+      updateProgress();
+
+      /* ---------- Mobile nav ---------- */
+      var navToggle = document.getElementById("nav-toggle");
+      var navLinks = document.getElementById("nav-links");
+      function closeNav() {
+        navLinks.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      }
+      if (navToggle && navLinks) {
+        navToggle.addEventListener("click", function () {
+          var open = navLinks.classList.toggle("open");
+          navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        navLinks.addEventListener("click", function (e) {
+          if (e.target.tagName === "A") closeNav();
+        });
+      }
+
+      /* ---------- Active nav ---------- */
+      var sections = ["features", "handoff", "dashboard", "try", "scenarios", "security", "install", "faq"];
+      var navAnchors = Array.prototype.slice.call(document.querySelectorAll(".nav-links a[href^='#']"));
+      function markActive() {
+        var y = window.scrollY + 130;
+        var current = "";
+        for (var i = 0; i < sections.length; i++) {
+          var el = document.getElementById(sections[i]);
+          if (el && el.offsetTop <= y) current = sections[i];
+        }
+        navAnchors.forEach(function (a) {
+          a.classList.toggle("active", a.getAttribute("href") === "#" + current);
+        });
+      }
+      window.addEventListener("scroll", markActive, { passive: true });
+      markActive();
+
+      /* ---------- Hero terminal typing loop ---------- */
+      var terminal = document.getElementById("hero-terminal");
+      if (terminal) {
+        var scenes = [
+          {
+            cmd: "claudeswap list",
+            out: [
+              ["out", "work       [READY]  · 42k tokens used"],
+              ["out", "personal   [READY]  · 18k tokens used"],
+              ["out", "consulting [OFF]    · logged out"]
+            ]
+          },
+          {
+            cmd: "claudeswap handoff personal",
+            out: [
+              ["warn", "⚠ rate limit reached on 'work' until 16:00"],
+              ["out", "syncing transcript to ~/.claudeswap/shared/sessions"],
+              ["ok", "resumed under 'personal' with full context · under 2s"]
+            ]
+          },
+          {
+            cmd: "claudeswap sessions",
+            out: [
+              ["out", "payment-service · refactor auth middleware · 42k tok"],
+              ["out", "web-dashboard   · navbar polish          · 18k tok"],
+              ["out", "worker-daemon   · sqs consumer          · 78k tok"]
+            ]
+          },
+          {
+            cmd: "claudeswap matrix",
+            out: [
+              ["out", "1 payment-service  ● RUNNING   · 42k tok"],
+              ["out", "2 web-dashboard    ○ IDLE      · 18k tok"],
+              ["out", "3 worker-daemon    ⚡ WAITING  · 78k tok"]
+            ]
+          }
+        ];
+
+        var sceneIndex = 0, lineIndex = 0, charIndex = 0, typing = false, done = false;
+
+        function renderTerm() {
+          var scene = scenes[sceneIndex];
+          var html = "";
+          if (typing) {
+            html += '<span class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">' +
+              escapeHtml(scene.cmd.slice(0, charIndex)) + '</span><span class="term-cursor"></span></span>';
+          } else {
+            html += '<span class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">' +
+              escapeHtml(scene.cmd) + '</span></span>';
+            for (var i = 0; i < lineIndex; i++) {
+              html += '<span class="term-line term-' + scene.out[i][0] + '">' + escapeHtml(scene.out[i][1]) + '</span>';
+            }
+            if (!done) html += '<span class="term-cursor"></span>';
+          }
+          terminal.innerHTML = html;
+        }
+
+        function tickTerm() {
+          if (done) return;
+          var scene = scenes[sceneIndex];
+          if (typing) {
+            charIndex++;
+            if (charIndex >= scene.cmd.length) { typing = false; lineIndex = 0; }
+            renderTerm();
+            return setTimeout(tickTerm, reduceMotion ? 1 : 30);
+          }
+          if (lineIndex < scene.out.length) {
+            lineIndex++;
+            renderTerm();
+            return setTimeout(tickTerm, reduceMotion ? 1 : 440);
+          }
+          done = true;
+          renderTerm();
+          setTimeout(function () {
+            sceneIndex = (sceneIndex + 1) % scenes.length;
+            charIndex = 0; typing = true; done = false;
+            renderTerm();
+            setTimeout(tickTerm, reduceMotion ? 1 : 500);
+          }, reduceMotion ? 100 : 2600);
+        }
+
+        if (reduceMotion) {
+          var all = [];
+          scenes.forEach(function (s) {
+            all.push('<span class="term-line"><span class="term-prompt">$</span> <span class="term-cmd">' + escapeHtml(s.cmd) + '</span></span>');
+            s.out.forEach(function (o) { all.push('<span class="term-line term-' + o[0] + '">' + escapeHtml(o[1]) + '</span>'); });
+          });
+          terminal.innerHTML = all.join("");
+        } else {
+          typing = true;
+          renderTerm();
+          setTimeout(tickTerm, 400);
+        }
+      }
+
+      /* ---------- Feature tilt ---------- */
+      var grid = document.getElementById("feature-grid");
+      if (grid && !reduceMotion) {
+        var cards = Array.prototype.slice.call(grid.children);
+        cards.forEach(function (card) {
+          card.addEventListener("mousemove", function (e) {
+            var r = card.getBoundingClientRect();
+            var px = (e.clientX - r.left) / r.width - 0.5;
+            var py = (e.clientY - r.top) / r.height - 0.5;
+            card.style.transform = "rotateY(" + (px * 8) + "deg) rotateX(" + (-py * 8) + "deg)";
+          });
+          card.addEventListener("mouseleave", function () {
+            card.style.transform = "";
+          });
+        });
+      }
+
+      /* ---------- Profile dashboard ---------- */
+      var profiles = {
+        work: { state: "ready", tokens: 42150, cap: 100000, speed: "58 tok/s", cost: "$0.14" },
+        personal: { state: "ready", tokens: 18000, cap: 100000, speed: "47 tok/s", cost: "$0.06" },
+        consulting: { state: "off", tokens: 0, cap: 100000, speed: "—", cost: "—" }
+      };
+      var chipBox = document.getElementById("profile-chips");
+      var gaugeRing = document.getElementById("gauge-ring");
+      var gaugeVal = document.getElementById("gauge-val");
+      var mProfile = document.getElementById("m-profile");
+      var mState = document.getElementById("m-state");
+      var mTokens = document.getElementById("m-tokens");
+      var mSpeed = document.getElementById("m-speed");
+      var mCost = document.getElementById("m-cost");
+      var CIRC = 339.29;
+
+      function selectProfile(name, instant) {
+        var p = profiles[name];
+        var pct = p.cap > 0 ? Math.round((p.tokens / p.cap) * 100) : 0;
+        var off = Math.round(CIRC * (1 - pct / 100));
+        if (instant || reduceMotion) {
+          gaugeRing.style.transition = "none";
+          gaugeRing.style.strokeDashoffset = off;
+          gaugeVal.textContent = pct + "%";
+        } else {
+          gaugeRing.style.transition = "stroke-dashoffset 0.8s cubic-bezier(0.22, 1, 0.36, 1)";
+          gaugeRing.style.strokeDashoffset = off;
+          gaugeVal.textContent = pct + "%";
+        }
+        gaugeRing.style.stroke = p.state === "off" ? "var(--faint)" : "var(--accent)";
+        mProfile.textContent = name;
+        mState.textContent = p.state;
+        mState.className = "v " + (p.state === "ready" ? "ok" : "off");
+        mTokens.textContent = p.state === "off" ? "logged out" : p.tokens.toLocaleString("en-US") + " / " + p.cap.toLocaleString("en-US");
+        mSpeed.textContent = p.speed;
+        mCost.textContent = p.cost;
+        var chips = chipBox.querySelectorAll(".chip");
+        chips.forEach(function (c) {
+          var on = c.getAttribute("data-profile") === name;
+          c.classList.toggle("active", on);
+          c.setAttribute("aria-selected", on ? "true" : "false");
+        });
+      }
+
+      if (chipBox) {
+        chipBox.addEventListener("click", function (e) {
+          var chip = e.target.closest(".chip");
+          if (chip) selectProfile(chip.getAttribute("data-profile"));
+        });
+        selectProfile("work", true);
+      }
+
+      /* ---------- Playground terminal ---------- */
+      var playOutput = document.getElementById("play-output");
+      var playInput = document.getElementById("play-input");
+      var playHint = document.getElementById("play-hint");
+
+      var cli = {
+        contextOn: false,
+        def: "work",
+        profiles: { work: "ready", personal: "ready", consulting: "off" },
+        sessionsList: [
+          "payment-service · refactor auth middleware · 42k tok · 2m ago",
+          "web-dashboard   · navbar polish          · 18k tok · 1h ago",
+          "worker-daemon   · sqs consumer          · 78k tok · yesterday"
+        ]
+      };
+
+      function plLine(cls, text) {
+        var div = document.createElement("div");
+        div.className = "pl-line" + (cls ? " term-" + cls : "");
+        div.textContent = text;
+        playOutput.appendChild(div);
+        playOutput.scrollTop = playOutput.scrollHeight;
+      }
+
+      function plCmd(cmd) {
+        var div = document.createElement("div");
+        div.className = "pl-line";
+        var prompt = document.createElement("span");
+        prompt.className = "term-prompt";
+        prompt.textContent = "$ ";
+        div.appendChild(prompt);
+        var c = document.createElement("span");
+        c.className = "term-cmd";
+        c.textContent = cmd;
+        div.appendChild(c);
+        playOutput.appendChild(div);
+        playOutput.scrollTop = playOutput.scrollHeight;
+      }
+
+      function handleCommand(line) {
+        var parts = line.split(" ");
+        if (parts[0] && parts[0].toLowerCase() === "claudeswap") parts.shift();
+        var cmd = (parts[0] || "").toLowerCase();
+        if (!cmd) {
+          plLine("out", "ClaudeSwap v1.1.0 — interactive demo. Type 'help' to begin.");
+          plLine("out", "commands: add · list · status · set-default · rename · remove · launch · handoff · sessions · matrix · agents · context · chat [export|import|list] · doctor · version · shortcut · clear");
+          return;
+        }
+        var arg = parts.slice(1).join(" ");
+        var arg1 = parts[1] || "";
+
+        function profileNames() { return Object.keys(cli.profiles); }
+        function validName(n) { return /^[a-zA-Z0-9_-]{1,24}$/.test(n); }
+        function fmtProfiles() {
+          var out = [];
+          Object.keys(cli.profiles).forEach(function (n) {
+            var st = cli.profiles[n];
+            var tag = st === "ready" ? "[READY]" : (st === "off" ? "[OFF]" : "[LIMITED]");
+            var mark = n === cli.def ? " (default)" : "";
+            out.push("  " + n + "  " + tag + mark);
+          });
+          return out;
+        }
+
+        switch (cmd) {
+          case "help":
+            plLine("out", "commands: add · list · status · set-default · rename · remove · launch · handoff · sessions · matrix · agents · context · chat [export|import|list] · doctor · version · shortcut · clear");
+            plLine("out", "try:  add work   |   list   |   handoff personal   |   context on");
+            break;
+
+          case "add":
+            if (!arg1) { plLine("warn", "usage: add <profile-name>"); break; }
+            if (!validName(arg1)) { plLine("error", "invalid name: use letters, digits, '-' or '_'"); break; }
+            if (cli.profiles[arg1]) { plLine("warn", "profile '" + arg1 + "' already exists"); break; }
+            cli.profiles[arg1] = "ready";
+            plLine("ok", "profile '" + arg1 + "' created. Log in via Claude Code on first use.");
+            break;
+
+          case "list":
+            plLine("out", "profiles:");
+            fmtProfiles().forEach(function (s) { plLine("out", s); });
+            plLine("out", "credentials stored: 0 · shared memory: " + (cli.contextOn ? "on" : "off"));
+            break;
+
+          case "status":
+            if (arg1 && !cli.profiles[arg1]) { plLine("error", "unknown profile '" + arg1 + "'"); break; }
+            {
+              var n = arg1 || cli.def;
+              var st = cli.profiles[n];
+              var toks = n === "work" ? "42,150 / 100,000 (42%)" : (n === "personal" ? "18,000 / 100,000 (18%)" : "logged out");
+              plLine("out", "profile   " + n);
+              plLine("out", "state     " + (st === "off" ? "logged out" : st));
+              plLine("out", "tokens    " + toks);
+              plLine("out", "speed     58 tok/s · 0.14");
+            }
+            break;
+
+          case "set-default":
+            if (!arg1) { plLine("warn", "usage: set-default <profile>"); break; }
+            if (!cli.profiles[arg1]) { plLine("error", "unknown profile '" + arg1 + "'"); break; }
+            cli.def = arg1;
+            plLine("ok", "default profile set to '" + arg1 + "'");
+            break;
+
+          case "handoff":
+            if (!arg1) { plLine("warn", "usage: handoff <target-profile>"); break; }
+            if (!cli.profiles[arg1]) { plLine("error", "target profile '" + arg1 + "' not found"); break; }
+            if (cli.profiles[arg1] === "off") { plLine("warn", "warning: '" + arg1 + "' is logged out. Run Claude Code under it first to authenticate."); }
+            plLine("out", "handing off from '" + cli.def + "' -> '" + arg1 + "'");
+            if (cli.contextOn) {
+              plLine("out", "syncing transcript to ~/.claudeswap/shared/sessions …");
+              plLine("ok", "resumed under '" + arg1 + "' with full context · under 2s");
+            } else {
+              plLine("warn", "shared memory is off; context will not carry over");
+              plLine("out", "resumed under '" + arg1 + "' · 1.2s");
+            }
+            cli.def = arg1;
+            break;
+
+          case "sessions":
+            cli.sessionsList.forEach(function (s) { plLine("out", s); });
+            plLine("out", "3 sessions · 138k tokens total");
+            break;
+
+          case "matrix":
+            plLine("out", "1 payment-service  ● RUNNING   · 42k tok");
+            plLine("out", "2 web-dashboard    ○ IDLE      · 18k tok");
+            plLine("out", "3 worker-daemon    ⚡ WAITING  · 78k tok");
+            plLine("out", "4 mobile-client     ✓ COMPLETED · 110k tok");
+            break;
+
+          case "context":
+            if (arg === "on") { cli.contextOn = true; plLine("ok", "shared memory enabled for all profiles"); }
+            else if (arg === "off") { cli.contextOn = false; plLine("out", "shared memory disabled"); }
+            else if (arg === "status") { plLine("out", "shared memory: " + (cli.contextOn ? "on" : "off")); }
+            else { plLine("warn", "usage: context [on|off|status]"); }
+            break;
+
+          case "doctor":
+            plLine("out", "checking installation…");
+            plLine("ok", "claudeswap v1.1.0 · ok");
+            plLine("ok", "shell completion · not installed (run doctor --install-shell)");
+            break;
+
+          case "shortcut":
+            plLine("out", "shortcut 'claudeswap-" + (arg1 || "work") + "' would be created. Run: claudeswap shortcut " + (arg1 || "work"));
+            break;
+
+          case "agents":
+            plLine("out", "agent 1 payment-service  ● RUNNING · 42k tok · a8f10b2c");
+            plLine("out", "agent 2 web-dashboard    ○ IDLE    · 18k tok · f3c21a9d");
+            plLine("out", "agent 3 worker-daemon    ⚡ WAITING · 78k tok · 7b19de33");
+            plLine("out", "actions: agents attach <id> · agents stop <id> · agents fork <id>");
+            break;
+
+          case "launch":
+            if (!arg1) { plLine("warn", "usage: launch <profile> [flags]"); break; }
+            if (!cli.profiles[arg1]) { plLine("error", "unknown profile '" + arg1 + "'"); break; }
+            plLine("out", "launching Claude Code under '" + arg1 + "'");
+            plLine("out", "CLAUDE_CONFIG_DIR=~/.claudeswap/profiles/" + arg1);
+            plLine("out", "flags forwarded: " + (parts.slice(2).join(" ") || "(none)"));
+            break;
+
+          case "chat":
+            if (arg1 === "export") {
+              plLine("out", "exporting sessions for '" + (parts[2] || cli.def) + "' …");
+              plLine("ok", "wrote ./workspace-chats.tar.gz (12 sessions)");
+            } else if (arg1 === "import") {
+              var archive = parts[2] || "";
+              if (!archive) { plLine("warn", "usage: chat import <archive>"); break; }
+              plLine("out", "importing " + archive + " …");
+              plLine("ok", "validated 12 entries · 0 path violations · profiles updated");
+            } else if (arg1 === "list") {
+              plLine("out", "payment-service · 4 sessions · 42k tok");
+              plLine("out", "web-dashboard   · 2 sessions · 18k tok");
+              plLine("out", "worker-daemon   · 1 session  · 78k tok");
+            } else {
+              plLine("warn", "usage: chat [export|import|list]");
+            }
+            break;
+
+          case "remove":
+            if (!arg1) { plLine("warn", "usage: remove <profile>"); break; }
+            if (!cli.profiles[arg1]) { plLine("error", "unknown profile '" + arg1 + "'"); break; }
+            delete cli.profiles[arg1];
+            if (cli.def === arg1) cli.def = Object.keys(cli.profiles)[0] || "work";
+            plLine("ok", "removed profile '" + arg1 + "' (config files preserved)");
+            break;
+
+          case "rename":
+            var newName = parts[2] || "";
+            if (!arg1 || !newName) { plLine("warn", "usage: rename <profile> <new-name>"); break; }
+            if (!cli.profiles[arg1]) { plLine("error", "unknown profile '" + arg1 + "'"); break; }
+            if (!validName(newName)) { plLine("error", "invalid name: use letters, digits, '-' or '_'"); break; }
+            cli.profiles[newName] = cli.profiles[arg1];
+            delete cli.profiles[arg1];
+            if (cli.def === arg1) cli.def = newName;
+            plLine("ok", "renamed '" + arg1 + "' -> '" + newName + "' · launcher updated");
+            break;
+
+          case "version":
+            plLine("ok", "claudeswap v1.1.0 (go 1.22 · MIT)");
+            break;
+
+          case "clear":
+            playOutput.innerHTML = "";
+            break;
+
+          case "exit":
+          case "quit":
+            plLine("out", "this is a demo terminal; the real CLI runs in your shell. try 'help'");
+            break;
+
+          default:
+            plLine("error", "unknown command '" + cmd + "'. type 'help' for the full list.");
+        }
+      }
+
+      function runCommand(raw) {
+        var line = raw.trim().replace(/\s+/g, " ");
+        if (!line) return;
+        plCmd(line);
+        handleCommand(line);
+      }
+
+      var playTyping = false;
+      function typeAndRun(cmd) {
+        if (!cmd) return;
+        if (playTyping) { runCommand(cmd); return; }
+        playTyping = true;
+        var line = document.createElement("div");
+        line.className = "pl-line";
+        var p = document.createElement("span");
+        p.className = "term-prompt";
+        p.textContent = "$ ";
+        var c = document.createElement("span");
+        c.className = "term-cmd";
+        var cur = document.createElement("span");
+        cur.className = "term-cursor";
+        line.appendChild(p);
+        line.appendChild(c);
+        line.appendChild(cur);
+        playOutput.appendChild(line);
+        playOutput.scrollTop = playOutput.scrollHeight;
+        var i = 0;
+        (function tick() {
+          if (i <= cmd.length) {
+            c.textContent = cmd.slice(0, i);
+            i++;
+            setTimeout(tick, 13);
+          } else {
+            cur.remove();
+            playTyping = false;
+            handleCommand(cmd);
+          }
+        })();
+      }
+
+      if (playInput && playOutput) {
+        plLine("out", "ClaudeSwap v1.1.0 — interactive demo. Type 'help' to begin.");
+
+        var history = [];
+        var histIdx = -1;
+
+        playInput.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            var v = playInput.value;
+            history.push(v);
+            histIdx = history.length;
+            runCommand(v);
+            playInput.value = "";
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (histIdx > 0) { histIdx--; playInput.value = history[histIdx] || ""; }
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            if (histIdx < history.length - 1) { histIdx++; playInput.value = history[histIdx] || ""; }
+            else { histIdx = history.length; playInput.value = ""; }
+          }
+        });
+
+        playHint.addEventListener("click", function (e) {
+          var chip = e.target.closest(".hint-chip");
+          if (chip) {
+            typeAndRun(chip.getAttribute("data-cmd"));
+            playInput.focus({ preventScroll: true });
+          }
+        });
+
+        /* Command reference: click any command to run it */
+        var libWrap = document.querySelector(".lib");
+        function setActiveLib(item) {
+          document.querySelectorAll(".lib-item.active").forEach(function (n) { n.classList.remove("active"); });
+          item.classList.add("active");
+        }
+        if (libWrap) {
+          libWrap.addEventListener("click", function (e) {
+            var item = e.target.closest(".lib-item");
+            if (!item) return;
+            setActiveLib(item);
+            typeAndRun(item.getAttribute("data-cmd"));
+            playInput.focus({ preventScroll: true });
+          });
+        }
+
+        /* Filter the command reference */
+        var libFilter = document.getElementById("lib-filter");
+        var libCount = document.getElementById("lib-count");
+        var libEmpty = document.getElementById("lib-empty");
+        var libTotal = document.querySelectorAll(".lib-item").length;
+        function applyLibFilter() {
+          var q = (libFilter.value || "").trim().toLowerCase();
+          var shown = 0;
+          document.querySelectorAll(".lib-item").forEach(function (it) {
+            var hit = !q || (it.textContent || "").toLowerCase().indexOf(q) !== -1;
+            it.hidden = !hit;
+            if (hit) shown++;
+          });
+          document.querySelectorAll(".lib-group").forEach(function (g) {
+            var node = g.nextSibling;
+            var any = false;
+            while (node) {
+              if (node.nodeType === 1 && node.classList && node.classList.contains("lib-group")) break;
+              if (node.nodeType === 1 && node.classList && node.classList.contains("lib-item") && !node.hidden) { any = true; break; }
+              node = node.nextSibling;
+            }
+            g.hidden = !any;
+          });
+          if (libCount) libCount.textContent = shown + " / " + libTotal;
+          if (libEmpty) libEmpty.hidden = shown > 0;
+        }
+        if (libFilter && libCount) {
+          libFilter.addEventListener("input", applyLibFilter);
+        }
+      }
+
+      /* ---------- Handoff simulation ---------- */
+      var hxBtn = document.getElementById("hx-btn");
+      var hxRunning = false;
+      if (hxBtn) {
+        var hxEl = {
+          dot: document.getElementById("hx-dot"),
+          midl: document.getElementById("hx-midl"),
+          status: document.getElementById("hx-status"),
+          steps: document.querySelectorAll("#hx-steps li"),
+          work: document.getElementById("hx-work"),
+          wPill: document.getElementById("hx-work-pill"),
+          wBar: document.getElementById("hx-work-bar"),
+          wNote: document.getElementById("hx-work-note"),
+          list: document.getElementById("hx-targets"),
+          name: document.getElementById("hx-target-name")
+        };
+        var hxTarget = { name: "personal", state: "ready", row: hxEl.list.querySelector(".hx-row") };
+        var hxVertical = function () { return window.matchMedia("(max-width: 820px)").matches; };
+        var hxMove = function (pct) {
+          hxEl.dot.style.opacity = "1";
+          if (hxVertical()) { hxEl.dot.style.left = "-7px"; hxEl.dot.style.top = pct + "%"; }
+          else { hxEl.dot.style.top = "-7px"; hxEl.dot.style.left = "calc(" + pct + "% - 6px)"; }
+        };
+        var hxStep = function (i) {
+          hxEl.steps.forEach(function (li, k) { li.className = k < i ? "done" : (k === i ? "on" : ""); });
+        };
+        var hxBadge = { ready: "ready", out: "session out", logged: "logged out" };
+        var hxReset = function () {
+          hxEl.list.querySelectorAll(".hx-row").forEach(function (r) { r.querySelector(".hx-rb").textContent = hxBadge[r.getAttribute("data-s")]; });
+          hxEl.dot.style.opacity = "0"; hxEl.dot.style.left = "0"; hxEl.dot.style.top = "-7px";
+          hxEl.midl.textContent = "--resume";
+          hxEl.steps.forEach(function (li) { li.className = ""; });
+          hxEl.work.className = "hx-from hx-box";
+          hxEl.wPill.textContent = "running"; hxEl.wPill.className = "hx-pill warn";
+          hxEl.wBar.style.width = "92%"; hxEl.wBar.className = "";
+          hxEl.wNote.textContent = "92% of window used";
+          hxEl.list.querySelectorAll(".hx-row").forEach(function (r) { r.classList.remove("live"); });
+          hxTarget.row.classList.add("sel");
+          hxEl.status.textContent = "Pick an account, then run the handoff.";
+          hxEl.status.className = "hx-status";
+        };
+        hxEl.list.addEventListener("click", function (e) {
+          var b = e.target.closest(".hx-row");
+          if (!b || hxRunning) return;
+          hxEl.list.querySelectorAll(".hx-row").forEach(function (r) { r.classList.remove("sel", "live"); r.setAttribute("aria-checked", "false"); });
+          b.classList.add("sel"); b.setAttribute("aria-checked", "true");
+          hxTarget = { name: b.getAttribute("data-t"), state: b.getAttribute("data-s"), row: b };
+          hxEl.name.textContent = hxTarget.name;
+          hxReset();
+        });
+        hxBtn.addEventListener("click", function () {
+          if (hxRunning) return;
+          hxRunning = true;
+          hxBtn.disabled = true;
+          hxReset();
+          var t = reduceMotion ? 0.05 : 1;
+          var at = function (ms, fn) { setTimeout(fn, ms * t); };
+          at(100, function () {
+            hxStep(0);
+            hxEl.wPill.textContent = "limit reached"; hxEl.wPill.className = "hx-pill limit";
+            hxEl.wBar.style.width = "100%"; hxEl.wBar.className = "hot";
+            hxEl.work.className = "hx-from hx-box out";
+            hxEl.wNote.textContent = "resets at 16:00";
+            hxEl.status.textContent = "Rate limit reached on 'work'.";
+          });
+          at(1100, function () {
+            hxStep(1); hxMove(50);
+            hxEl.midl.textContent = "sync";
+            hxEl.status.textContent = "Syncing transcript to shared memory...";
+          });
+          at(2100, function () {
+            hxStep(2); hxMove(100);
+            hxEl.midl.textContent = "--resume";
+            hxEl.status.textContent = "Launching '" + hxTarget.name + "' with --resume...";
+          });
+          at(3200, function () {
+            hxEl.steps.forEach(function (li) { li.className = "done"; });
+            hxTarget.row.classList.remove("sel"); hxTarget.row.classList.add("live");
+            hxTarget.row.querySelector(".hx-rb").textContent = "resumed";
+            hxEl.status.textContent = hxTarget.state === "logged"
+              ? "'" + hxTarget.name + "' may need a login first, then the conversation resumes."
+              : "Resumed under '" + hxTarget.name + "' in under 2s. Context intact.";
+            hxEl.status.className = "hx-status done";
+            hxBtn.textContent = "Run again";
+            hxBtn.disabled = false;
+            hxRunning = false;
+          });
+        });
+      }
+
+      /* ---------- Diagram nodes ---------- */
+      var metaEl = document.getElementById("diagram-meta");
+      var nodeInfo = {
+        work: "work · own login stays here · hands its session to the pool",
+        personal: "personal · own login stays here · can resume any pooled session",
+        consulting: "consulting · own login stays here · pool access is optional (context off)",
+        team: "team · own login stays here · can resume any pooled session",
+        memory: "shared context · transcripts, project memory, edit caches · no credentials"
+      };
+      function litLine(name) {
+        document.querySelectorAll(".diagram .dg-line").forEach(function (l) {
+          l.classList.toggle("lit", name === "memory" || l.getAttribute("data-for") === name);
+        });
+      }
+
+      var dgNodes = document.querySelectorAll(".dg-node");
+      dgNodes.forEach(function (node) {
+        node.addEventListener("click", function () {
+          var key = node.getAttribute("data-node");
+          dgNodes.forEach(function (n) { n.classList.remove("active"); });
+          node.classList.add("active");
+          metaEl.textContent = nodeInfo[key];
+          litLine(key);
+        });
+        node.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            node.click();
+          }
+        });
+      });
+
+      /* ---------- Matrix cells ---------- */
+      var states = ["st-running", "st-idle", "st-wait", "st-done"];
+      var labels = { "st-running": "Running", "st-idle": "Idle", "st-wait": "Waiting", "st-done": "Completed" };
+      var trails = {
+        "st-running": "running unit tests...",
+        "st-idle": "awaiting user prompt",
+        "st-wait": "needs Bash permission",
+        "st-done": "finished in 4m 12s"
+      };
+      Array.prototype.slice.call(document.querySelectorAll(".mcell")).forEach(function (cell) {
+        cell.addEventListener("click", function () {
+          var cur = states.indexOf(cell.className.split(" ").filter(function (c) { return states.indexOf(c) >= 0; })[0]);
+          var next = (cur + 1) % states.length;
+          cell.className = "mcell " + states[next];
+          cell.querySelector(".mstatus").innerHTML = '<span class="dot"></span> ' + labels[states[next]];
+          cell.querySelector(".mtrail").textContent = trails[states[next]];
+        });
+      });
+
+      /* ---------- Copy buttons ---------- */
+      function fallbackCopy(text, cb) {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); cb(); } catch (e) { /* ignore */ }
+        document.body.removeChild(ta);
+      }
+      Array.prototype.slice.call(document.querySelectorAll(".copy-btn")).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var text = btn.getAttribute("data-copy") || "";
+          function copied() {
+            btn.textContent = "Copied";
+            btn.classList.add("copied");
+            setTimeout(function () {
+              btn.textContent = "Copy";
+              btn.classList.remove("copied");
+            }, 1800);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(copied).catch(function () { fallbackCopy(text, copied); });
+          } else {
+            fallbackCopy(text, copied);
+          }
+        });
+      });
+
+      /* ---------- Ticker ---------- */
+      var tickerLine = document.getElementById("ticker-line");
+      var tickMsgs = [
+        "telemetry · session a8f10b2c active · 42,150 tok",
+        "telemetry · speed 58 tok/s · cost $0.14",
+        "telemetry · matrix: 3 sessions supervised · 1 waiting",
+        "telemetry · shared memory on · 0 credentials"
+      ];
+      if (tickerLine) {
+        var ti = 0;
+        setInterval(function () {
+          ti = (ti + 1) % tickMsgs.length;
+          tickerLine.style.opacity = "0";
+          setTimeout(function () {
+            tickerLine.textContent = tickMsgs[ti];
+            tickerLine.style.opacity = "1";
+          }, 300);
+        }, 2800);
+      }
+
+      /* ---------- Reveal on scroll ---------- */
+      if (!reduceMotion && "IntersectionObserver" in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) {
+              en.target.classList.add("in");
+              io.unobserve(en.target);
+            }
+          });
+        }, { threshold: 0.12 });
+        Array.prototype.slice.call(document.querySelectorAll(".reveal")).forEach(function (el) { io.observe(el); });
+      } else {
+        Array.prototype.slice.call(document.querySelectorAll(".reveal")).forEach(function (el) {
+          el.classList.add("in");
+        });
+      }
+
+      /* ---------- Stat counters ---------- */
+      function animateCount(el) {
+        var target = parseInt(el.getAttribute("data-count"), 10);
+        var prefix = el.getAttribute("data-prefix") || "";
+        var suffix = el.getAttribute("data-suffix") || "";
+        if (reduceMotion) { el.innerHTML = prefix + target + suffix; return; }
+        var start = null;
+        var dur = 900;
+        function step(ts) {
+          if (!start) start = ts;
+          var t = Math.min((ts - start) / dur, 1);
+          var eased = 1 - Math.pow(1 - t, 3);
+          el.innerHTML = prefix + Math.round(eased * target) + suffix;
+          if (t < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      }
+
+      var nums = Array.prototype.slice.call(document.querySelectorAll(".stat .num"));
+      if ("IntersectionObserver" in window) {
+        var numIO = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) {
+              animateCount(en.target);
+              numIO.unobserve(en.target);
+            }
+          });
+        }, { threshold: 0.5 });
+        nums.forEach(function (n) { numIO.observe(n); });
+      } else {
+        nums.forEach(animateCount);
+      }
+    })();
+  </script>
+
+<script>
+(function () {
+  var sessions = [
+    ["a8f10b2c", "claude-3-7-sonnet", "active", "42,150 (42%)", 42, "58 tok/s", "$0.14", "analyzing webhook idempotency...", "Read file, Edit file, Run tests", "middleware/auth.go (+24/-3), server.go (+12/-1)"],
+    ["c41d77e0", "claude-3-7-sonnet", "idle", "88,000 (74%)", 74, "0 tok/s", "$0.31", "waiting for next prompt", "Read file, Edit file", "stripe/webhook.go (+88/-4)"],
+    ["f3c21a9d", "claude-3-5-haiku", "completed", "18,000 (18%)", 18, "0 tok/s", "$0.02", "finished", "Read file, Run tests", "net/dial.go (+6/-2)"]
+  ];
+  var labels = ["id", "model", "status", "tokens", "speed", "cost", "thinking", "trail", "files"];
+  var kv = document.getElementById("tui-kv");
+  var list = document.getElementById("tui-sessions");
+  function esc(t) { return String(t).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+  function showSession(i) {
+    var d = sessions[i];
+    var vals = [d[0], d[1], d[2], '<span class="tgauge"><i style="width:' + d[4] + '%"></i></span>' + esc(d[3]), d[5], d[6], d[7], d[8], d[9]];
+    var html = "";
+    for (var k = 0; k < labels.length; k++) html += "<dt>" + labels[k] + "</dt><dd>" + (k === 3 ? vals[k] : esc(vals[k])) + "</dd>";
+    kv.innerHTML = html;
+  }
+  if (kv && list) {
+    showSession(0);
+    list.addEventListener("click", function (e) {
+      var b = e.target.closest(".tui-row");
+      if (!b || b.getAttribute("data-i") === null) return;
+      list.querySelectorAll(".tui-row").forEach(function (r) { r.classList.remove("sel"); });
+      b.classList.add("sel");
+      showSession(+b.getAttribute("data-i"));
+    });
+  }
+
+  var scen = [
+    { code: '<span class="c"># 1. Start work under your primary profile</span>\n<span class="p">$</span> claudeswap-work\n\n<span class="c"># 2. Claude outputs: "Rate limit reached until 4:00 PM"</span>\n\n<span class="c"># 3. Rotate the conversation to another account (you choose which)</span>\n<span class="p">$</span> claudeswap handoff personal\n\n<span class="c"># Several accounts? Run it alone to pick from a list with each status</span>\n<span class="p">$</span> claudeswap handoff',
+      steps: ["You pick the target by name, or choose from the picker. Nothing is chosen for you.", "Verifies shared context is enabled.", "Syncs the transcript to ~/.claudeswap/shared/sessions.", "Launches Claude Code under personal with --resume <session-id>.", "Claude resumes with the full history intact."] },
+    { code: '<span class="c"># Open the Supervisor Matrix</span>\n<span class="p">$</span> claudeswap matrix',
+      steps: ["See which sessions are computing, idle, or blocked on a shell permission.", "Press 1, 2 or 3 to jump into a running session.", "A locked background session is auto-branched with --fork-session, so no active process is crashed."] },
+    { code: '<span class="c"># Unified memory: transcripts, project memory, history shared</span>\n<span class="p">$</span> claudeswap context on\n\n<span class="c"># Separate silos, for NDAs or distinct clients</span>\n<span class="p">$</span> claudeswap context off\n\n<span class="c"># Current status and active symlinks</span>\n<span class="p">$</span> claudeswap context status',
+      steps: ["On: solo developers get one continuous memory across profiles.", "Off: each account stays in its own silo for client work.", "Credentials are never shared in either mode."] },
+    { code: '<span class="c"># Any Claude Code flag is forwarded as-is</span>\n<span class="p">$</span> claudeswap-work\n<span class="p">$</span> claudeswap-personal --continue\n<span class="p">$</span> claudeswap-consulting --resume a8f10b2c',
+      steps: ["A launcher binary is generated in your PATH for each profile.", "Created in ~/.claudeswap/bin/ and updated on rename."] },
+    { code: '<span class="c"># Portable .tar.gz archive</span>\n<span class="p">$</span> claudeswap chat export --output ./workspace-chats.tar.gz\n\n<span class="c"># Clean Markdown notes</span>\n<span class="p">$</span> claudeswap chat export --format md --output ./meeting-notes/\n\n<span class="c"># Import on another machine</span>\n<span class="p">$</span> claudeswap chat import ./workspace-chats.tar.gz',
+      steps: ["Export active sessions as an archive or readable Markdown.", "Import validates every path and rejects zip-slip entries."] }
+  ];
+  var code = document.getElementById("sc-code");
+  var steps = document.getElementById("sc-steps");
+  var tabs = document.querySelectorAll(".sc-tab");
+  function showScen(i) {
+    code.innerHTML = scen[i].code;
+    steps.innerHTML = scen[i].steps.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+    tabs.forEach(function (t, k) { t.setAttribute("aria-selected", k === i ? "true" : "false"); });
+  }
+  if (code && steps && tabs.length) {
+    showScen(0);
+    tabs.forEach(function (t) { t.addEventListener("click", function () { showScen(+t.getAttribute("data-i")); }); });
+  }
+})();
+</script>
+<script>
+(function () {
+  var tabs = document.querySelectorAll(".pv-tab");
+  var panels = document.querySelectorAll(".pv-panel");
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      var i = t.getAttribute("data-i");
+      tabs.forEach(function (x) { x.setAttribute("aria-selected", x === t ? "true" : "false"); });
+      panels.forEach(function (p) { p.hidden = p.getAttribute("data-i") !== i; });
+    });
+  });
+})();
+</script>
+<script>
+(function () {
+  var tabs = document.querySelectorAll(".in-tab");
+  var blocks = document.querySelectorAll(".in-block");
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      var i = t.getAttribute("data-i");
+      tabs.forEach(function (x) { x.setAttribute("aria-selected", x === t ? "true" : "false"); });
+      blocks.forEach(function (b) { b.hidden = b.getAttribute("data-i") !== i; });
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# Serve only the static site. Keep source, agent rules and internal docs off the web.
+.agents
+.github
+.gstack
+bin
+dist
+cmd
+internal
+test
+scratch
+AGENTS.md
+GEMINI.md
+CONTRIBUTING.md
+CHANGELOG.md
+SECURITY.md
+Makefile
+go.mod
+go.sum
+install.sh
+install.ps1
