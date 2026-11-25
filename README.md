@@ -14,6 +14,7 @@
   <a href="#"><img src="https://img.shields.io/badge/version-1.1.0-FF5722.svg?style=flat-square" alt="Version"></a>
   <a href="#"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg?style=flat-square" alt="Platforms"></a>
   <a href="#"><img src="https://img.shields.io/badge/security-zero--credential%20storage-brightgreen.svg?style=flat-square" alt="Security"></a>
+  <a href="https://tequity.tech"><img src="https://img.shields.io/badge/built%20at-Tequity-6C3EF4.svg?style=flat-square" alt="Built at Tequity"></a>
 </p>
 
 ---
@@ -421,7 +422,12 @@ make release
 ## 🏢 About
 
 ClaudeSwap is built and maintained by Deepak Kewalramani at [Tequity](https://tequity.tech).
-Contributions from the Tequity engineering team and the community are welcome.
+
+It started as an internal tool. Our engineers run Claude Code across several projects every day, and hitting a usage limit mid-task meant losing context and starting over. ClaudeSwap fixes that, and we are sharing it so other teams can use it too.
+
+**About Tequity:** Tequity is a product partner for founders, from idea to IPO. It works with startups at every stage, from their first contract engineer to a high performance team they own, with 100+ customers and 1M+ users on products it has built. Learn more at [tequity.tech](https://tequity.tech).
+
+Contributions from the Tequity engineering team and the open source community are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
