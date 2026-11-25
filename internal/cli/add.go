@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 
 	"github.com/spf13/cobra"
 )

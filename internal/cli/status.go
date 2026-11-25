@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 
 	"github.com/spf13/cobra"
 )

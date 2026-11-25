@@ -6,8 +6,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/claudeswap/claudeswap/internal/profile"
-	"github.com/claudeswap/claudeswap/internal/session"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/session"
 )
 
 func TestSessionBrowser_NavigationAndActions(t *testing.T) {

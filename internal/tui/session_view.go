@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/session"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/claudeswap/claudeswap/internal/profile"
-	"github.com/claudeswap/claudeswap/internal/session"
 )
 
 // SessionBrowserResult is returned when the session browser exits.

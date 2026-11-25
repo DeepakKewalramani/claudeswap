@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/claudeswap/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
 )
 
 func TestManager_CRUD(t *testing.T) {

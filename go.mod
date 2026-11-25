@@ -1,4 +1,4 @@
-module github.com/claudeswap/claudeswap
+module github.com/DeepakKewalramani/claudeswap
 
 go 1.26.0
 

@@ -5,9 +5,9 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/DeepakKewalramani/claudeswap/internal/supervisor"
+	"github.com/DeepakKewalramani/claudeswap/internal/tui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/claudeswap/claudeswap/internal/supervisor"
-	"github.com/claudeswap/claudeswap/internal/tui"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

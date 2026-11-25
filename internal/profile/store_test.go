@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/claudeswap/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
 )
 
 func TestStore_SaveAndLoad(t *testing.T) {

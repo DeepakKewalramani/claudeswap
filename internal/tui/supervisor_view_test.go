@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DeepakKewalramani/claudeswap/internal/supervisor"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/claudeswap/claudeswap/internal/supervisor"
 )
 
 func TestSupervisorModel_NavigationAndActions(t *testing.T) {

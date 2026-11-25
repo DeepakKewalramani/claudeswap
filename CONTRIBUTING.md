@@ -25,7 +25,7 @@ When contributing code, please keep these non-negotiable principles in mind:
 
 ```bash
 # Clone the repository
-git clone https://github.com/claudeswap/claudeswap.git
+git clone https://github.com/DeepakKewalramani/claudeswap.git
 cd claudeswap
 
 # Run test suite

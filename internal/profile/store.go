@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/claudeswap/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
 )
 
 // ErrCorruptedProfiles is returned when profiles.json exists but contains invalid JSON.

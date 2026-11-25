@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/claudeswap/claudeswap/internal/config"
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 )
 
 var xmlTagRegex = regexp.MustCompile(`<[^>]+>`)

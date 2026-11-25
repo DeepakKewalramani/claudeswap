@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DeepakKewalramani/claudeswap/internal/supervisor"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/claudeswap/claudeswap/internal/supervisor"
 )
 
 // SupervisorResult is returned when exiting the supervisor matrix view.

@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/claudeswap/claudeswap/internal/claude"
-	"github.com/claudeswap/claudeswap/internal/profile"
-	"github.com/claudeswap/claudeswap/internal/session"
+	"github.com/DeepakKewalramani/claudeswap/internal/claude"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/session"
 )
 
 func TestE2E_FullAccountSwapAndSessionMemoryLifecycle(t *testing.T) {

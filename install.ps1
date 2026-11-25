@@ -1,7 +1,7 @@
 # ClaudeSwap Universal Installer for Windows PowerShell
 $ErrorActionPreference = "Stop"
 
-$Repo = "claudeswap/claudeswap"
+$Repo = "DeepakKewalramani/claudeswap"
 $Version = "1.1.0"
 
 Write-Host "ClaudeSwap Windows Installer" -ForegroundColor Cyan
@@ -20,7 +20,7 @@ $TargetExe = Join-Path $InstallDir "claudeswap.exe"
 if (Get-Command "go" -ErrorAction SilentlyContinue) {
     Write-Host "Go detected. Installing via 'go install'..." -ForegroundColor Green
     $env:GOBIN = $InstallDir
-    go install github.com/claudeswap/claudeswap/cmd/claudeswap@latest
+    go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest
 }
 
 if (!(Test-Path $TargetExe)) {
@@ -39,4 +39,4 @@ Write-Host "`n✓ ClaudeSwap installed successfully!" -ForegroundColor Green
 Write-Host "Please restart your PowerShell window, then run:"
 Write-Host "  claudeswap add <ProfileName>" -ForegroundColor Cyan
 Write-Host "  claudeswap" -ForegroundColor Cyan
-Write-Host "  claudeswap switch" -ForegroundColor Cyan
+Write-Host "  claudeswap launch <ProfileName>" -ForegroundColor Cyan

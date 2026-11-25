@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/claudeswap/claudeswap/internal/config"
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 )
 
 // Manager manages direct executable shortcuts in ~/.claudeswap/bin.

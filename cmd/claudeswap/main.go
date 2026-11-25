@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/claudeswap/claudeswap/internal/cli"
+	"github.com/DeepakKewalramani/claudeswap/internal/cli"
 )
 
 func main() {
