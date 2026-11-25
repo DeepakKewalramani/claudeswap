@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/DeepakKewalramani/claudeswap/internal/claude"
@@ -141,9 +140,7 @@ func (s *Supervisor) StartSession(opts StartOptions) (*ManagedSession, error) {
 	cmd.Stderr = lf
 
 	// Detach child process from current process group so it lives independently
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setpgid: true,
-	}
+	cmd.SysProcAttr = detachedProcAttr()
 
 	if err := cmd.Start(); err != nil {
 		_ = lf.Close()
@@ -207,11 +204,7 @@ func (s *Supervisor) KillSession(id string) error {
 		sess := &reg.Sessions[i]
 		if sess.ID == id {
 			if sess.PID > 0 && isProcessAlive(sess.PID) {
-				_ = syscall.Kill(-sess.PID, syscall.SIGTERM)
-				time.Sleep(50 * time.Millisecond)
-				if isProcessAlive(sess.PID) {
-					_ = syscall.Kill(-sess.PID, syscall.SIGKILL)
-				}
+				terminateProcessGroup(sess.PID)
 			}
 			sess.Status = StateStopped
 			sess.UpdatedAt = time.Now()
@@ -342,19 +335,6 @@ func (s *Supervisor) saveRegistry(reg *Registry) error {
 		return err
 	}
 	return os.WriteFile(s.registryPath(), data, 0600)
-}
-
-func isProcessAlive(pid int) bool {
-	if pid <= 0 {
-		return false
-	}
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return false
-	}
-	// Signal 0 verifies existence without killing
-	err = process.Signal(syscall.Signal(0))
-	return err == nil
 }
 
 func generateShortUUID() string {

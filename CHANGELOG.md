@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2026-11-25
+
+### Fixed
+- Windows builds failed because the background session supervisor used Unix-only process calls. Process detach, kill and liveness checks now have separate Unix and Windows versions, so the release workflow can build all six targets.
+
+---
+
 ## [1.1.1] - 2026-11-25
 
 ### Fixed

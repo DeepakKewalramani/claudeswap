@@ -7,7 +7,7 @@ import (
 )
 
 // Version of ClaudeSwap
-const Version = "1.1.1"
+const Version = "1.1.2"
 
 func newVersionCmd() *cobra.Command {
 	return &cobra.Command{
