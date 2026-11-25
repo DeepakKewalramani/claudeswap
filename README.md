@@ -418,6 +418,13 @@ make release
 
 ---
 
+## 🏢 About
+
+ClaudeSwap is built and maintained by Deepak Kewalramani at [Tequity](https://tequity.tech).
+Contributions from the Tequity engineering team and the community are welcome.
+
+---
+
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for details.
