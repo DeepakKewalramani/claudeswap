@@ -7,7 +7,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/claudeswap/claudeswap/internal/chat"
+	"github.com/DeepakKewalramani/claudeswap/internal/chat"
 
 	"github.com/spf13/cobra"
 )

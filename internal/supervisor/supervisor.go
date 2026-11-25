@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/claudeswap/claudeswap/internal/claude"
-	"github.com/claudeswap/claudeswap/internal/config"
-	"github.com/claudeswap/claudeswap/internal/profile"
-	"github.com/claudeswap/claudeswap/internal/session"
+	"github.com/DeepakKewalramani/claudeswap/internal/claude"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/session"
 )
 
 // StartOptions contains parameters for launching a supervised background Claude session.

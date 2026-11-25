@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/claudeswap/claudeswap/internal/config"
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 )
 
 // Launcher executes Claude Code with isolated profile environments.

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/claudeswap/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
 )
 
 var (

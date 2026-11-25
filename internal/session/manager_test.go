@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/claudeswap/claudeswap/internal/config"
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 )
 
 func TestSessionManager_ScanAndGroup(t *testing.T) {

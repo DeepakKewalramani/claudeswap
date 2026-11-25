@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/claudeswap/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
 )
 
 // ShellType represents the detected shell.

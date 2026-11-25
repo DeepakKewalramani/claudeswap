@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/claudeswap/claudeswap/internal/claude"
+	"github.com/DeepakKewalramani/claudeswap/internal/claude"
 
 	"github.com/spf13/cobra"
 )

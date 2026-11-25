@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/claudeswap/claudeswap/internal/profile"
 )
 
 func (m Model) View() string {

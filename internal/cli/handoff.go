@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/DeepakKewalramani/claudeswap/internal/claude"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/tui"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/claudeswap/claudeswap/internal/claude"
-	"github.com/claudeswap/claudeswap/internal/profile"
-	"github.com/claudeswap/claudeswap/internal/tui"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/term"

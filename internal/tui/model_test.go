@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/claudeswap/claudeswap/internal/profile"
+	"github.com/DeepakKewalramani/claudeswap/internal/profile"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

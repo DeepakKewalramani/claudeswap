@@ -1,12 +1,13 @@
 package claude
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/claudeswap/claudeswap/internal/config"
+	"github.com/DeepakKewalramani/claudeswap/internal/config"
 )
 
 var sharedDirectories = []string{
@@ -50,9 +51,14 @@ func SyncSharedContext(paths *config.Paths, profileConfigDir string, enable bool
 					}
 					_ = os.Remove(profileDir)
 				} else if fi.IsDir() {
-					// Merge existing files from profileDir to sharedTarget before symlinking
-					_ = mergeDirectories(profileDir, sharedTarget)
-					_ = os.RemoveAll(profileDir)
+					// Merge existing files from profileDir into sharedTarget before symlinking.
+					// Only delete the profile copy once every file is safely in the shared pool.
+					if err := mergeDirectories(profileDir, sharedTarget, conflictSuffix(profileConfigDir)); err != nil {
+						return fmt.Errorf("failed to merge %s into shared context (profile data left untouched): %w", dirName, err)
+					}
+					if err := os.RemoveAll(profileDir); err != nil {
+						return fmt.Errorf("failed to replace %s with shared link: %w", dirName, err)
+					}
 				}
 			}
 
@@ -84,9 +90,17 @@ func SyncSharedContext(paths *config.Paths, profileConfigDir string, enable bool
 			if fi.Mode()&os.ModeSymlink != 0 {
 				return nil
 			}
-			_ = os.Remove(profileHistory)
+			// Preserve the profile's own history by appending it to the shared history first.
+			if err := appendFile(profileHistory, sharedHistory); err != nil {
+				return fmt.Errorf("failed to merge history.jsonl into shared context (profile history left untouched): %w", err)
+			}
+			if err := os.Remove(profileHistory); err != nil {
+				return fmt.Errorf("failed to replace history.jsonl with shared link: %w", err)
+			}
 		}
-		_ = os.Symlink(sharedHistory, profileHistory)
+		if err := os.Symlink(sharedHistory, profileHistory); err != nil {
+			return fmt.Errorf("failed to symlink shared history.jsonl: %w", err)
+		}
 	} else {
 		fi, err := os.Lstat(profileHistory)
 		if err == nil && fi.Mode()&os.ModeSymlink != 0 {
@@ -97,7 +111,15 @@ func SyncSharedContext(paths *config.Paths, profileConfigDir string, enable bool
 	return nil
 }
 
-func mergeDirectories(src, dst string) error {
+// conflictSuffix names the copy kept when a profile file collides with a different shared file.
+func conflictSuffix(profileConfigDir string) string {
+	return ".conflict-" + filepath.Base(profileConfigDir)
+}
+
+// mergeDirectories copies every file from src into dst. Files missing from dst are copied as-is;
+// files that exist in dst with different content are kept alongside it with the conflict suffix,
+// so nothing from src is lost. Any error aborts the merge and is returned to the caller.
+func mergeDirectories(src, dst, suffix string) error {
 	entries, err := os.ReadDir(src)
 	if err != nil {
 		return err
@@ -108,16 +130,70 @@ func mergeDirectories(src, dst string) error {
 		dstPath := filepath.Join(dst, entry.Name())
 
 		if entry.IsDir() {
-			_ = os.MkdirAll(dstPath, 0700)
-			_ = mergeDirectories(srcPath, dstPath)
-		} else {
-			// Only copy if not present in dst
-			if _, err := os.Stat(dstPath); os.IsNotExist(err) {
-				_ = copyFileSimple(srcPath, dstPath)
+			if err := os.MkdirAll(dstPath, 0700); err != nil {
+				return err
+			}
+			if err := mergeDirectories(srcPath, dstPath, suffix); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if _, err := os.Stat(dstPath); os.IsNotExist(err) {
+			if err := copyFileSimple(srcPath, dstPath); err != nil {
+				return err
+			}
+			continue
+		} else if err != nil {
+			return err
+		}
+
+		same, err := sameContent(srcPath, dstPath)
+		if err != nil {
+			return err
+		}
+		if !same {
+			if err := copyFileSimple(srcPath, dstPath+suffix); err != nil {
+				return err
 			}
 		}
 	}
 	return nil
+}
+
+func sameContent(a, b string) (bool, error) {
+	da, err := os.ReadFile(a)
+	if err != nil {
+		return false, err
+	}
+	db, err := os.ReadFile(b)
+	if err != nil {
+		return false, err
+	}
+	return bytes.Equal(da, db), nil
+}
+
+// appendFile appends src to dst, adding a trailing newline when src does not end with one.
+func appendFile(src, dst string) error {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	if len(data) == 0 {
+		return nil
+	}
+	if data[len(data)-1] != '\n' {
+		data = append(data, '\n')
+	}
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return err
+	}
+	if _, err := out.Write(data); err != nil {
+		_ = out.Close()
+		return err
+	}
+	return out.Close()
 }
 
 func copyFileSimple(src, dst string) error {
@@ -131,8 +207,9 @@ func copyFileSimple(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
-
-	_, err = io.Copy(out, in)
-	return err
+	if _, err := io.Copy(out, in); err != nil {
+		_ = out.Close()
+		return err
+	}
+	return out.Close()
 }
