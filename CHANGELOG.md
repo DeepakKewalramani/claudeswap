@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-11-25
+
+### Fixed
+- `go install github.com/DeepakKewalramani/claudeswap/cmd/claudeswap@latest` failed because `go.mod` declared the wrong module path. (Thanks @davepaiva)
+- `install.sh` and `install.ps1` downloaded from a repo that does not exist. They now use `DeepakKewalramani/claudeswap`, and `install.sh` verifies the binary against `checksums.txt`.
+- Enabling shared context could silently delete a profile's transcripts and `history.jsonl`. Merge errors now abort without deleting anything, conflicting files are kept as `<name>.conflict-<profile>`, and history is appended to the shared history.
+- The release workflow built a binary that does not exist (`./cmd/claudehub`). It now builds `claudeswap-*` binaries with the Go version from `go.mod`.
+
+### Changed
+- README and website footer credit Tequity.
+
+---
+
 ## [1.1.0] - 2026-10-29
 
 ### Added

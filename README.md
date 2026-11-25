@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://golang.org"><img src="https://img.shields.io/badge/go-1.22%2B-00ADD8.svg?style=flat-square" alt="Go Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/version-1.1.0-FF5722.svg?style=flat-square" alt="Version"></a>
+  <a href="#"><img src="https://img.shields.io/badge/version-1.1.1-FF5722.svg?style=flat-square" alt="Version"></a>
   <a href="#"><img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg?style=flat-square" alt="Platforms"></a>
   <a href="#"><img src="https://img.shields.io/badge/security-zero--credential%20storage-brightgreen.svg?style=flat-square" alt="Security"></a>
   <a href="https://tequity.tech"><img src="https://img.shields.io/badge/built%20at-Tequity-6C3EF4.svg?style=flat-square" alt="Built at Tequity"></a>

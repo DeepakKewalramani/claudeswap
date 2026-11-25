@@ -11,7 +11,7 @@ RED="$(tput setaf 1 2>/dev/null || echo '')"
 RESET="$(tput sgr0 2>/dev/null || echo '')"
 
 REPO="DeepakKewalramani/claudeswap"
-VERSION="1.1.0"
+VERSION="1.1.1"
 
 echo "${BOLD}ClaudeSwap Installer${RESET}"
 echo "===================="

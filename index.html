@@ -36,7 +36,7 @@
     "operatingSystem": "macOS, Linux, Windows",
     "description": "ClaudeSwap is a Claude account switcher for Claude Code. Switch between multiple accounts in seconds, track quotas, supervise parallel sessions, and keep shared memory across profiles without storing credentials.",
     "url": "https://claudeswap.vercel.app/",
-    "softwareVersion": "1.1.0",
+    "softwareVersion": "1.1.1",
     "license": "https://github.com/DeepakKewalramani/claudeswap/blob/main/LICENSE",
     "offers": {
       "@type": "Offer",
@@ -1904,7 +1904,7 @@ source ~/.zshrc   <span class="cmt"># or ~/.bashrc</span></pre>
         if (parts[0] && parts[0].toLowerCase() === "claudeswap") parts.shift();
         var cmd = (parts[0] || "").toLowerCase();
         if (!cmd) {
-          plLine("out", "ClaudeSwap v1.1.0 — interactive demo. Type 'help' to begin.");
+          plLine("out", "ClaudeSwap v1.1.1 — interactive demo. Type 'help' to begin.");
           plLine("out", "commands: add · list · status · set-default · rename · remove · launch · handoff · sessions · matrix · agents · context · chat [export|import|list] · doctor · version · shortcut · clear");
           return;
         }
@@ -2000,7 +2000,7 @@ source ~/.zshrc   <span class="cmt"># or ~/.bashrc</span></pre>
 
           case "doctor":
             plLine("out", "checking installation…");
-            plLine("ok", "claudeswap v1.1.0 · ok");
+            plLine("ok", "claudeswap v1.1.1 · ok");
             plLine("ok", "shell completion · not installed (run doctor --install-shell)");
             break;
 
@@ -2061,7 +2061,7 @@ source ~/.zshrc   <span class="cmt"># or ~/.bashrc</span></pre>
             break;
 
           case "version":
-            plLine("ok", "claudeswap v1.1.0 (go 1.22 · MIT)");
+            plLine("ok", "claudeswap v1.1.1 (go 1.22 · MIT)");
             break;
 
           case "clear":
@@ -2119,7 +2119,7 @@ source ~/.zshrc   <span class="cmt"># or ~/.bashrc</span></pre>
       }
 
       if (playInput && playOutput) {
-        plLine("out", "ClaudeSwap v1.1.0 — interactive demo. Type 'help' to begin.");
+        plLine("out", "ClaudeSwap v1.1.1 — interactive demo. Type 'help' to begin.");
 
         var history = [];
         var histIdx = -1;
